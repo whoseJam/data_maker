@@ -8,7 +8,9 @@ using Genfun = std::function<void()>;
 
 class IO {
 public:
+    IO();
     IO* testcase(int l, int r, Genfun gen);
+    IO* testcase(int x, Genfun gen);
     IO* input_prefix(const std::string& str);
     IO* input_suffix(const std::string& str);
     IO* output_prefix(const std::string& str);

@@ -1,5 +1,12 @@
 
+#include <iostream>
+
+#include "../include/Clone.h"
+#include "../include/Define.h"
+#include "../include/Destroy.h"
 #include "../include/Attribute.h"
+
+using namespace std;
 
 Attribute::Attribute() {
     key = "UNSET";
@@ -9,6 +16,12 @@ Attribute::Attribute() {
 Attribute::Attribute(const Attribute& other) {
     key = other.key;
     val = other.val->clone();
+}
+
+Attribute::~Attribute() {
+#ifdef OUTPUT_DELETER
+    cout << "delete attribute\n";
+#endif
 }
 
 Attribute* Attribute::name(const std::string& name) {
@@ -27,11 +40,24 @@ Attribute* Attribute::value(Character* character) {
 }
 
 void Attribute::generate() {
+    if (generated) return;
+    generated = true;
+    
     val->generate();
 }
 
 Node* Attribute::clone() {
-    return new Attribute(*this);
+    if (!Clone::get()->check(this))
+        Clone::get()->insert(this, new Attribute(*this));
+    return (Node*)Clone::get()->check(this);
+}
+
+void Attribute::destroy() {
+    if (destroyed) return;
+    destroyed = true;
+
+    Destroy::get()->add(this);
+    val->destroy();
 }
 
 void Attribute::out() {

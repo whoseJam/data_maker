@@ -1,7 +1,11 @@
 
-#include "../include/Edge.h"
-#include "../include/Define.h"
 #include <iostream>
+
+#include "../include/Edge.h"
+#include "../include/Clone.h"
+#include "../include/Define.h"
+#include "../include/Destroy.h"
+
 using namespace std;
 
 Edge::Edge() {
@@ -25,13 +29,28 @@ void Edge::__set_start_and_end(int start, int end) {
 }
 
 void Edge::generate() {
+    if (generated) return;
+    generated = true;
+    
     for (auto attr : attrs) {
         attr->generate();
     }
 }
 
 Node* Edge::clone() {
-    return new Edge(*this);
+    if (!Clone::get()->check(this))
+        Clone::get()->insert(this, new Edge(*this));
+    return (Node*)Clone::get()->check(this);
+}
+
+void Edge::destroy() {
+    if (destroyed) return;
+    destroyed = true;
+
+    Destroy::get()->add(this);
+    for (Attribute* attr : attrs) {
+        attr->destroy();
+    }
 }
 
 void Edge::out() {

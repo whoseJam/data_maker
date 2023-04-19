@@ -2,7 +2,6 @@
 #define GRAPH_H
 
 #include "Node.h"
-#include "IExportable.h"
 
 class Graph : public Node {
 public:
@@ -15,6 +14,8 @@ public:
     Graph* edge(int num);
     Graph* connected(bool flag);
     void generate() override;
+    Node* clone() override;
+    void destroy() override;
     void out() override;
 };
 

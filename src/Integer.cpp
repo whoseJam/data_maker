@@ -1,8 +1,12 @@
 
-#include "../include/Integer.h"
+#include <iostream>
+
+#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Random.h"
-#include <iostream>
+#include "../include/Integer.h"
+#include "../include/Destroy.h"
+
 using namespace std;
 
 Integer::Integer() {
@@ -15,6 +19,12 @@ Integer::Integer(const Integer& other) {
     gflag = other.gflag;
     l = other.l;
     r = other.r;
+}
+
+Integer::~Integer() {
+#ifdef OUTPUT_DELETER
+    cout << "delete integer\n";
+#endif
 }
 
 Integer* Integer::lower_bound(int x) {
@@ -44,7 +54,7 @@ Integer* Integer::upper_bound(int x) {
     r = x;
     if (l != UNSET) {
         if (l > r) {
-            cout<< "Integer::upper_bound smaller than lower_bound\n";
+            cout << "Integer::upper_bound smaller than lower_bound\n";
             exit(-1);
         }
     }
@@ -52,6 +62,9 @@ Integer* Integer::upper_bound(int x) {
 }
 
 void Integer::generate() {
+    if (generated) return;
+    generated = true;
+    
     switch (gflag)
     {
     case RANDOM_FROM_RANGE:
@@ -66,7 +79,16 @@ void Integer::generate() {
 }
 
 Node* Integer::clone() {
-    return new Integer(*this);
+    if (!Clone::get()->check(this))
+        Clone::get()->insert(this, new Integer(*this));
+    return (Node*)Clone::get()->check(this);
+}
+
+void Integer::destroy() {
+    if (destroyed) return;
+    destroyed = true;
+
+    Destroy::get()->add(this);
 }
 
 void Integer::out() {

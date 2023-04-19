@@ -1,4 +1,6 @@
 
+#include <stdarg.h>
+
 #define UNSET -123
 #define RANDOM_FROM_RANGE 1
 #define RANDOM_FROM_SET 2
@@ -33,3 +35,22 @@
         exit(-1); \
     } while(0);
 
+#define IF_COND_THEN_OUTPUT_STRING(args, cond) \
+    if (cond) { \
+        char* str = va_arg(args, char*); \
+        cout << str; \
+    }
+
+#define IF_SPEC_IS_LAST(args, spec, cur_len, len) \
+    if ((spec) == "last") { \
+        IF_COND_THEN_OUTPUT_STRING(args, \
+            (cur_len) == (len) \
+        ) \
+    }
+
+#define IF_SPEC_IS_NLAST(args, spec, cur_len, len) \
+    if ((spec) == "nlast") { \
+        IF_COND_THEN_OUTPUT_STRING(args, \
+            (cur_len) < (len)\
+        ) \
+    }

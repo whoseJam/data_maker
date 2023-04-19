@@ -1,23 +1,20 @@
-#ifndef ARRAY_H
-#define ARRAY_H
-#include <vector>
+#ifndef TUPLE_H
+#define TUPLE_H
+
 #include <string>
+#include <vector>
 
 #include "Node.h"
 #include "Format.h"
-#include "Integer.h"
-#include "Character.h"
-#include "IntegerWrapper.h"
 
-class Array : public Node, public Format::Formatter {
+class Tuple : public Node, public Format::Formatter {
 public:
-    Array();
-    Array(const Array& other);
-    virtual ~Array();
-    Array* length(int len);
-    Array* length(Integer* len);
-    Array* fill(Node* ele);
-    Array* format(const std::string& fmt);
+    Tuple();
+    Tuple(const Tuple& other);
+    virtual ~Tuple();
+    Tuple* append(Node* ele);
+    Tuple* unshift(Node* ele);
+    Tuple* format(const std::string& fmt);
     virtual void generate() override;
     virtual Node* clone() override;
     virtual void destroy() override;
@@ -28,10 +25,7 @@ public:
     virtual bool parse_finish() override;
 private:
 //  define stage
-    IntegerWrapper len;
-    Node* element;
-
-//  generate stage
+    int len;
     std::vector<Node*> elements;
 
 //  output stage

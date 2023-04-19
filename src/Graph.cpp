@@ -1,5 +1,8 @@
-#include "../include/Graph.h"
+
 #include <iostream>
+
+#include "../include/Graph.h"
+
 using namespace std;
 
 Graph::Graph() {
@@ -24,9 +27,16 @@ Graph* Graph::connected(bool flag) {
 }
 
 void Graph::generate() {
+    if (generated) return;
+    generated = true;
+}
 
+Node* Graph::clone() {
+    return nullptr;
+}
+
+void Graph::destroy() {
 }
 
 void Graph::out() {
-
 }

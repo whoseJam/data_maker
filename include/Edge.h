@@ -12,6 +12,7 @@ public:
     Edge* add_attribute(Attribute* attr);
     virtual void generate() override;
     virtual Node* clone() override;
+    virtual void destroy() override;
     virtual void out() override;
 
     void __set_start_and_end(int start, int end);

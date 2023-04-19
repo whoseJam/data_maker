@@ -13,6 +13,7 @@ public:
     Permutation* length(int len);
     virtual void generate() override;
     virtual Node* clone() override;
+    virtual void destroy() override;
     virtual void out() override;
 private:
     int len;

@@ -1,8 +1,12 @@
 
-#include "../include/Character.h"
+#include <iostream>
+
+#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Random.h"
-#include <iostream>
+#include "../include/Destroy.h"
+#include "../include/Character.h"
+
 using namespace std;
 
 Character::Character() {
@@ -15,6 +19,12 @@ Character::Character(const Character& other) {
     gflag = other.gflag;
     l = other.l;
     r = other.r;
+}
+
+Character::~Character() {
+#ifdef OUTPUT_DELETER
+    cout << "delete character\n";
+#endif
 }
 
 Character* Character::lower_bound(char x) {
@@ -52,6 +62,9 @@ Character* Character::upper_bound(char x) {
 }
 
 void Character::generate() {
+    if (generated) return;
+    generated = true;
+    
     switch (gflag)
     {
     case RANDOM_FROM_RANGE:
@@ -66,7 +79,16 @@ void Character::generate() {
 }
 
 Node* Character::clone() {
-    return new Character(*this);
+    if (!Clone::get()->check(this))
+        Clone::get()->insert(this, new Character(*this));
+    return (Node*)Clone::get()->check(this);
+}
+
+void Character::destroy() {
+    if (destroyed) return;
+    destroyed = true;
+
+    Destroy::get()->add(this);
 }
 
 void Character::out() {
