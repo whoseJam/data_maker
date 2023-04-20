@@ -31,8 +31,13 @@
 
 #define MESSAGE_NOT_FOUND_IN_FORMAT(class, str_var) \
     do { \
-        cout << #class << "::[" << (str_var) <<"] in format not found\n"; \
+        cout << #class << "::[" << (str_var) << "] in format not found\n"; \
         exit(-1); \
+    } while(0);
+
+#define MESSAGE_ATTR_NOT_FOUND_IN_FORMAT(class, str_var) \
+    do { \
+        cout << #class << "::[" << (str_var) << "](attribute) in format not found\n"; \
     } while(0);
 
 #define IF_COND_THEN_OUTPUT_STRING(args, cond) \
