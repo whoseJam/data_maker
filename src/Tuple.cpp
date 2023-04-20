@@ -78,9 +78,11 @@ void Tuple::out() {
 void Tuple::parse(const string& spec, ...) {
     va_list valist;
     va_start(valist, spec);
-    IF_SPEC_IS_LAST(valist, spec, cur_iter, elements.size() - 1)
-    else IF_SPEC_IS_NLAST(valist, spec, cur_iter, elements.size() - 1)
-    else if (spec == "x") {
+    if (spec == SPEC_LAST) {
+        HANDLE_SPEC_LAST(valist, cur_iter, elements.size() - 1);
+    } else if (spec == SPEC_NLAST) {
+        HANDLE_SPEC_NLAST(valist, cur_iter, elements.size() - 1);
+    } else if (spec == SPEC_SELF) {
         elements[cur_iter]->out();
     } else {
         MESSAGE_NOT_FOUND_IN_FORMAT(Tuple, spec);

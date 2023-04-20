@@ -115,24 +115,7 @@ void Tree::out() {
 void Tree::parse(const string& spec, ...) {
     va_list valist;
     va_start(valist, spec);
-    IF_SPEC_IS_LAST(valist, spec, cur_iter, vertex_num)
-    else IF_SPEC_IS_NLAST(valist, spec, cur_iter, vertex_num)
-    else if (spec == "fa") {
-        cout << fa[cur_iter];
-    } else if (spec == "x") {
-        cout << cur_iter;
-    } else {
-        bool specifier_matched = false;
-        for (auto attr : attr_per_node[cur_iter]) {
-            if (spec == attr->__get_key()) {
-                attr->out();
-                specifier_matched = true;
-            }
-        }
-        if (!specifier_matched) {
-            MESSAGE_NOT_FOUND_IN_FORMAT(Tree, spec);
-        }
-    }
+    
     va_end(valist);
 }
 

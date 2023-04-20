@@ -11,6 +11,7 @@ using namespace std;
 Edge::Edge() {
     start = UNSET;
     end = UNSET;
+    fmt = "$s $t";
 }
 
 Edge::Edge(const Edge& other) {
@@ -21,6 +22,12 @@ Edge::Edge(const Edge& other) {
 
 Edge* Edge::add_attribute(Attribute* attr) {
     attrs.push_back(attr);
+    return this;
+}
+
+Edge* Edge::format(const string& fmt) {
+    this->fmt = fmt;
+    return this;
 }
 
 void Edge::__set_start_and_end(int start, int end) {
@@ -54,10 +61,33 @@ void Edge::destroy() {
 }
 
 void Edge::out() {
-    cout << start << " " << end << " ";
-    for (auto attr : attrs) {
-        attr->out();
-        cout << " ";
+    CHECK_STRING_UNSET(Edge, fmt);
+    Format::parse(fmt, this);
+}
+
+void Edge::parse(const std::string& spec, ...) {
+    va_list valist;
+    va_start(valist, spec);
+    if (spec == SPEC_START) {
+        cout << start;
+    } else if (spec == SPEC_TO) {
+        cout << end;
+    } else if (spec == SPEC_ATTR) {
+        HANDLE_SPEC_A(valist, attrs);
+    } else {
+        MESSAGE_NOT_FOUND_IN_FORMAT(Edge, spec);
     }
-    cout << "\n";
+    va_end(valist);
+}
+
+void Edge::parse_start() {
+    cur_iter = 0;
+}
+
+void Edge::parse_next() {
+    cur_iter++;
+}
+
+bool Edge::parse_finish() {
+    return cur_iter > 0;
 }

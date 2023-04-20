@@ -1,10 +1,11 @@
 #ifndef ATTRIBUTE_H
 #define ATTRIBUTE_H
 
+#include <string>
+
 #include "Node.h"
 #include "Integer.h"
 #include "Character.h"
-#include <string>
 
 class Attribute : public Node {
 public:

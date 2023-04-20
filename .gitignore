@@ -1,3 +1,5 @@
 maker/**
 dist/**
 build/**
+.vscode/*
+.VsCodeCounter/*

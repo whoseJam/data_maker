@@ -4,6 +4,13 @@
 #define UNSET -123
 #define RANDOM_FROM_RANGE 1
 #define RANDOM_FROM_SET 2
+#define SPEC_LAST "last"
+#define SPEC_NLAST "nlast"
+#define SPEC_SELF "x"
+#define SPEC_ATTR "a"
+#define SPEC_START "s"
+#define SPEC_TO "t"
+#define SPEC_FA "fa"
 
 #define CHECK_UNSET(class, var) \
     do { \
@@ -46,16 +53,32 @@
         cout << str; \
     }
 
-#define IF_SPEC_IS_LAST(args, spec, cur_len, len) \
-    if ((spec) == "last") { \
+#define HANDLE_SPEC_LAST(args, cur_len, len) \
+    do { \
         IF_COND_THEN_OUTPUT_STRING(args, \
             (cur_len) == (len) \
         ) \
-    }
+    } while(0);
 
-#define IF_SPEC_IS_NLAST(args, spec, cur_len, len) \
-    if ((spec) == "nlast") { \
+#define HANDLE_SPEC_NLAST(args, cur_len, len) \
+    do { \
         IF_COND_THEN_OUTPUT_STRING(args, \
             (cur_len) < (len)\
         ) \
-    }
+    } while(0);
+
+#define HANDLE_SPEC_A(args, attrs) \
+    do { \
+        bool attr_found = false; \
+        string attr_name = va_arg((args), char*); \
+        for (Attribute* attr : attrs) { \
+            if (attr_name == attr->__get_key()) { \
+                attr->out(); \
+                attr_found = true; \
+                break; \
+            } \
+        } \
+        if (!attr_found) { \
+            MESSAGE_ATTR_NOT_FOUND_IN_FORMAT(Vertex, attr_name); \
+        } \
+    } while(0);

@@ -66,21 +66,10 @@ void Vertex::out() {
 void Vertex::parse(const string& spec, ...) {
     va_list valist;
     va_start(valist, spec);
-    if (spec == "x") {
+    if (spec == SPEC_SELF) {
         cout << idx;
-    } else if (spec == "a") {
-        bool attr_found = false;
-        string attr_name = va_arg(valist, char*);
-        for (Attribute* attr : attrs) {
-            if (attr_name == attr->__get_key()) {
-                attr->out();
-                attr_found = true;
-                break;
-            }
-        }
-        if (!attr_found) {
-            MESSAGE_ATTR_NOT_FOUND_IN_FORMAT(Vertex, attr_name);
-        }
+    } else if (spec == SPEC_ATTR) {
+        HANDLE_SPEC_A(valist, attrs);
     } else {
         MESSAGE_NOT_FOUND_IN_FORMAT(Vertex, spec);
     }

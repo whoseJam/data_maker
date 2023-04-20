@@ -3,7 +3,6 @@
 
 #include "Permutation.h"
 #include "Destroy.h"
-#include "Vertex.h"
 #include "Array.h"
 #include "Graph.h"
 #include "Tuple.h"
