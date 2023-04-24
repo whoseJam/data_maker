@@ -1,21 +1,29 @@
 
+#ifndef INTEGERWRAPPER_H
+#define INTEGERWRAPPER_H
+
+#include <string>
+
 #include "Node.h"
-#include "Integer.h"
+#include "Define.h"
+
+class Integer;
 
 class IntegerWrapper : public Node {
 public:
-    IntegerWrapper(const std::string& class_name, const std::string& var_name);
+    IntegerWrapper();
     IntegerWrapper(const IntegerWrapper& other);
     int get();
-    void set(int val);
-    void set(Integer* val);
-    virtual void generate() override;
+    IntegerWrapper* value(int val);
+    CL_UPDATE_FUNC(IntegerWrapper, value, integer_value, UF_assign);
+    virtual void generate(bool re) override;
     virtual Node* clone() override;
     virtual void destroy() override;
     virtual void out() override;
+    virtual bool equal(Node* other) override;
 private:
-    std::string cls;
-    std::string var;
     Integer* integer_value;
     int int_value;
 };
+
+#endif

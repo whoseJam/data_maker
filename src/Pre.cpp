@@ -1,4 +1,8 @@
+#include <string>
+
 #include "../include/Pre.h"
+
+using namespace std;
 
 Character* lower_character() {
     return (new Character())

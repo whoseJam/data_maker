@@ -16,6 +16,7 @@ public:
     IO* output_prefix(const std::string& str);
     IO* output_suffix(const std::string& str);
     IO* working_directory(const std::string& str);
+    IO* skip_generate_existing_data();
     void generate();
 private:
     struct IOPack {
@@ -31,6 +32,7 @@ private:
     std::string output_suf;
     
     std::string working_dir;
+    bool skip_exist_data;
 };
 
 #endif

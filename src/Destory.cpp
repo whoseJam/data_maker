@@ -15,10 +15,15 @@ void Destroy::add(Node* item) {
     items.push_back(item);
 }
 
-void Destroy::destroy() {
-    cout<<"len="<<items.size()<<"\n";
+void Destroy::start_service() {
     for (Node* item : items) {
-        cout<<"delete="<<item<<"\n";
+        delete item;
+    }
+    items.clear();
+}
+
+void Destroy::stop_service() {
+    for (Node* item : items) {
         delete item;
     }
     items.clear();

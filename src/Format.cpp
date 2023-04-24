@@ -1,4 +1,5 @@
 
+#include <stack>
 #include <iostream>
 
 #include "../include/Tree.h"
@@ -8,12 +9,37 @@
 #include "../include/Define.h"
 
 using namespace std;
+using namespace Format;
+
+void Formatter::parse(const string& spec, int n, ...) {
+    va_list valist;
+    va_start(valist, n);
+    if (spec == SPEC_LAST) {
+        CHECK_FUNCTION_ARGS_MATCH(class_parsing(), spec, n, 1);
+        if (is_last()) {
+            char* msg = va_arg(valist, char*);
+            cout << msg;
+        }
+    } else if (spec == SPEC_NLAST) {
+        CHECK_FUNCTION_ARGS_MATCH(class_parsing(), spec, n, 1);
+        if (!is_last()) {
+            char* msg = va_arg(valist, char*);
+            cout << msg;
+        }
+    } else {
+        throw SpecNotFoundException(spec);
+    }
+}
+
+SpecNotFoundException::SpecNotFoundException(const string& spec) {
+    msg = spec + " not found";
+}
 
 namespace Format {
     string get_specifier(const string& str, int start) {
         string ans = "";
         for (int i = start + 1; i < str.length(); i++) {
-            if (islower(str[i])) {
+            if (islower(str[i]) || isupper(str[i])) {
                 ans.push_back(str[i]);
             } else break;
         }
@@ -67,9 +93,24 @@ namespace Format {
                 if (fmt[pos] == ']') break;
             }
         }
-        if (args.size() == 0) obj->parse(specifier);
-        if (args.size() == 1) obj->parse(specifier, args[0].c_str());
-        if (args.size() == 2) obj->parse(specifier, args[0].c_str(), args[1].c_str());
+        if (args.size() == 0) obj->parse(specifier, 0);
+        if (args.size() == 1) obj->parse(specifier, 1, args[0].c_str());
+        if (args.size() == 2) obj->parse(specifier, 2, args[0].c_str(), args[1].c_str());
+    }
+
+    
+
+    stack<string> class_stack;
+    stack<string> variable_stack;
+
+    string class_parsing() {
+        if (class_stack.empty()) return "UNSET";
+        return class_stack.top();
+    }
+
+    string variable_parsing() {
+        if (variable_stack.empty()) return "UNSET";
+        return variable_stack.top();
     }
 
     /*
@@ -78,18 +119,28 @@ namespace Format {
     Pre-Condition:
         fmt不应该为UNSET
     */
-    void parse(const string& fmt, Formatter* obj) {
+    void parse(Formatter* obj, const string& fmt, const string& class_name, bool ignore_non_spec) {
+        CHECK_STRING_UNSET(class_name, fmt);
+        class_stack.push(class_name);
         obj->parse_start();
         while (!obj->parse_finish()) {
             for (int i = 0; i < fmt.length(); i++) {
                 if (fmt[i] == '$') {
-                    string spec = get_specifier(fmt, i);
                     parse_specifier(fmt, i, obj);
-                } else {
+                } else if (!ignore_non_spec) {
                     cout << fmt[i];
                 }
             }
             obj->parse_next();
         }
+        class_stack.pop();
     }
+}
+
+ParseStack::ParseStack(const string& cls) {
+    Format::class_stack.push(cls);
+}
+
+ParseStack::~ParseStack() {
+    Format::class_stack.pop();
 }

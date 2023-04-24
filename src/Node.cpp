@@ -9,6 +9,7 @@ using namespace std;
 Node::Node() {
     generated = false;
     destroyed = false;
+    type = STRUCTURE_NODE;
 }
 
 Node::~Node() {

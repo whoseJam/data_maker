@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include "../include/Clone.h"
 #include "../include/Array.h"
 #include "../include/Format.h"
 #include "../include/Define.h"
@@ -9,13 +8,15 @@
 using namespace std;
 using namespace Format;
 
-Array::Array(): len("Array", "len") {
-    element = nullptr;
+Array::Array() {
+    len = new IntegerWrapper();
+    tmpl_ele = nullptr;
     fmt = "$x";
 }
 
-Array::Array(const Array& other): len(other.len) {
-    element = other.element;
+Array::Array(const Array& other) {
+    len = (IntegerWrapper*)other.len->clone();
+    tmpl_ele = other.tmpl_ele->clone();
     fmt = other.fmt;
 }
 
@@ -26,17 +27,7 @@ Array::~Array() {
 }
 
 Array* Array::length(int len) {
-    this->len.set(len);
-    return this;
-}
-
-Array* Array::length(Integer* len) {
-    this->len.set(len);
-    return this;
-}
-
-Array* Array::fill(Node* ele) {
-    element = ele;
+    this->len->value(len);
     return this;
 }
 
@@ -45,24 +36,41 @@ Array* Array::format(const string& fmt) {
     return this;
 }
 
-void Array::generate() {
-    if (generated) return;
+Array* Array::unique() {
+    unique_flag = true;
+    return this;
+}
+
+void Array::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
     
-    CHECK_NULL(Array, element);
-    len.generate();
-    for (int i = 1; i <= len.get(); i++) {
-        Clone::get()->prepare();
-        elements.push_back(element->clone());
+    CHECK_NULL(Array, tmpl_ele);
+    CL_GENERATE(len);
+    for (int i = 1; i <= len->get(); i++)
+        elements.push_back(tmpl_ele->clone());
+    for (int i = 0; i < elements.size(); i++) {
+        elements[i]->generate(re);
+        if (unique_flag) {
+            int cnt = 0;
+            auto check_continue = [&]() {
+                for (int j = 0; j < i; j++) {
+                    if (elements[j]->equal(elements[i])) return true;
+                } return false;
+            };
+            while(check_continue()) {
+                elements[i]->generate(true); cnt++;
+                if (cnt >= MAX_RETRY) MESSAGE_MAX_RETRY_EXCEED(Array);
+            }
+        }
     }
-    for (auto ele : elements) 
-        ele->generate();
+    CL_GENERATE_ITERABLE(elements);
 }
 
 Node* Array::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Array(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new Array(*this);
+    return this;
 }
 
 void Array::destroy() {
@@ -70,29 +78,41 @@ void Array::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    element->destroy();
-    for (auto ele : elements)
-        ele->destroy();
+    len->destroy();
+    CL_DESTROY(len);
+    CL_DESTROY(tmpl_ele);
+    CL_DESTROY_ITERABLE(elements);
 }
 
 void Array::out() {
     CHECK_STRING_UNSET(Array, fmt);
-    Format::parse(fmt, this);
+    Format::parse(this, fmt, "Array", false);
 }
 
-void Array::parse(const string& spec, ...) {
-    va_list valist;
-    va_start(valist, spec);
-    if (spec == SPEC_LAST) {
-        HANDLE_SPEC_LAST(valist, cur_iter, elements.size() - 1);
-    } else if (spec == SPEC_NLAST) {
-        HANDLE_SPEC_NLAST(valist, cur_iter, elements.size() - 1);
-    } else if (spec == SPEC_SELF) {
-        elements[cur_iter]->out();
-    } else {
-        MESSAGE_NOT_FOUND_IN_FORMAT(Array, spec);
+bool Array::equal(Node* o) {
+    Array* other = dynamic_cast<Array*>(o);
+    if (other == nullptr) return false;
+    if (!len->equal(other->len)) return false;
+    for (int i = 0; i < elements.size(); i++) {
+        if (!elements[i]->equal(other->elements[i])) return false;
+    } return true;
+}
+
+void Array::parse(const string& spec, int n, ...) {
+    ParseStack("Array");
+    try {
+        CALL_FORMATTER(spec, n);
+    } catch (SpecNotFoundException& e) {
+        va_list valist;
+        va_start(valist, n);
+        if (spec == SPEC_SELF) {
+            CHECK_FUNCTION_ARGS_MATCH(Array, spec, n, 0);
+            elements[cur_iter]->out();
+        } else {
+            MESSAGE_NOT_FOUND_IN_FORMAT(Array, spec);
+        }
+        va_end(valist);
     }
-    va_end(valist);
 }
 
 void Array::parse_start() {
@@ -104,5 +124,9 @@ void Array::parse_next() {
 }
 
 bool Array::parse_finish() {
-    return cur_iter >= len.get();
+    return cur_iter >= len->get();
+}
+
+bool Array::is_last() {
+    return cur_iter == len->get() - 1;
 }

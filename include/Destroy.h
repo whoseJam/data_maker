@@ -9,7 +9,8 @@ class Destroy {
 public:
     static Destroy* get();
     void add(Node* item);
-    void destroy();
+    void start_service();
+    void stop_service();
 private:
     static Destroy instance;
     std::vector<Node*> items;

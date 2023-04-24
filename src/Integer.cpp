@@ -1,24 +1,26 @@
 
 #include <iostream>
 
-#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Random.h"
 #include "../include/Integer.h"
 #include "../include/Destroy.h"
+#include "../include/IntegerWrapper.h"
 
 using namespace std;
+using namespace Random;
+using namespace Format;
 
 Integer::Integer() {
-    gflag = UNSET;
-    l = UNSET;
-    r = UNSET;
+    l = new IntegerWrapper();
+    r = new IntegerWrapper();
+    fmt = "$x";
 }
 
 Integer::Integer(const Integer& other) {
-    gflag = other.gflag;
     l = other.l;
     r = other.r;
+    fmt = other.fmt;
 }
 
 Integer::~Integer() {
@@ -28,60 +30,36 @@ Integer::~Integer() {
 }
 
 Integer* Integer::lower_bound(int x) {
-    if (gflag != UNSET &&
-        gflag != RANDOM_FROM_RANGE) {
-        cout << "Integer::gflag dismatch\n";
-        exit(-1);
-    }
-    gflag = RANDOM_FROM_RANGE;
-    l = x;
-    if (r != UNSET) {
-        if (l > r) {
-            cout << "Integer::lower_bound bigger than upper_bound\n";
-            exit(-1);
-        }
-    }
+    l->value(x);
     return this;
 }
 
 Integer* Integer::upper_bound(int x) {
-    if (gflag != UNSET && 
-        gflag != RANDOM_FROM_RANGE) {
-        cout << "Integer::gflag dismatch\n";
-        exit(-1);
-    }
-    gflag = RANDOM_FROM_RANGE;
-    r = x;
-    if (l != UNSET) {
-        if (l > r) {
-            cout << "Integer::upper_bound smaller than lower_bound\n";
-            exit(-1);
-        }
-    }
+    r->value(x);
     return this;
 }
 
-void Integer::generate() {
-    if (generated) return;
+Integer* Integer::format(const string& fmt) {
+    this->fmt = fmt;
+    return this;
+}
+
+void Integer::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
     
-    switch (gflag)
-    {
-    case RANDOM_FROM_RANGE:
-        value = Random::rand_int(l, r);
-        break;
-    case RANDOM_FROM_SET:
-        value = Random::rand_int(0, 100);
-        break;
-    default:
-        break;
-    }
+    CL_GENERATE(l);
+    CL_GENERATE(r);
+#ifdef DEBUG_INTEGER_FLAG
+    cout << "l=" << l->get() << " r=" << r->get() << "\n";
+#endif
+    value = rand_int(l->get(), r->get());
 }
 
 Node* Integer::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Integer(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new Integer(*this);
+    return this;
 }
 
 void Integer::destroy() {
@@ -89,8 +67,47 @@ void Integer::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
+    CL_DESTROY(l);
+    CL_DESTROY(r);
 }
 
 void Integer::out() {
-    cout << value;
+    CHECK_STRING_UNSET(Integer, fmt);
+    Format::parse(this, fmt, "Integer", false);
+}
+
+bool Integer::equal(Node* o) {
+    Integer* other = dynamic_cast<Integer*>(o);
+    if (other == nullptr) return false;
+    return value == other->value;
+}
+
+void Integer::parse(const string& spec, int n, ...) {
+    try {
+        CALL_FORMATTER(spec, n);
+    } catch (SpecNotFoundException& e) {
+        va_list valist;
+        va_start(valist, n);
+        if (spec == SPEC_SELF) {
+            cout << value;
+        } else {
+            MESSAGE_NOT_FOUND_IN_FORMAT(Integer, spec);
+        }
+    }
+}
+
+void Integer::parse_start() {
+    cur_iter = 0;
+}
+
+void Integer::parse_next() {
+    cur_iter++;
+}
+
+bool Integer::parse_finish() {
+    return cur_iter > 0;
+}
+
+bool Integer::is_last() {
+    return true;
 }

@@ -1,7 +1,6 @@
 
 #include <iostream>
 
-#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Destroy.h"
 #include "../include/Attribute.h"
@@ -29,27 +28,19 @@ Attribute* Attribute::name(const std::string& name) {
     return this;
 }
 
-Attribute* Attribute::value(Integer* integer) {
-    val = integer;
-    return this;
-}
-
-Attribute* Attribute::value(Character* character) {
-    val = character;
-    return this;
-}
-
-void Attribute::generate() {
-    if (generated) return;
+void Attribute::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
     
-    val->generate();
+    CHECK_NULL(Attribute, val);
+    CHECK_STRING_UNSET(Attribute, key);
+    CL_GENERATE(val);
 }
 
 Node* Attribute::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Attribute(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new Attribute(*this);
+    return this;
 }
 
 void Attribute::destroy() {
@@ -57,11 +48,17 @@ void Attribute::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    val->destroy();
+    CL_DESTROY(val);
 }
 
 void Attribute::out() {
     val->out();
+}
+
+bool Attribute::equal(Node* o) {
+    Attribute* other = dynamic_cast<Attribute*>(o);
+    if (other == nullptr) return false;
+    return val->equal(other->val);
 }
 
 std::string Attribute::__get_key() {

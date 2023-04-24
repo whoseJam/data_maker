@@ -26,8 +26,8 @@ Graph* Graph::connected(bool flag) {
     return this;
 }
 
-void Graph::generate() {
-    if (generated) return;
+void Graph::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
 }
 

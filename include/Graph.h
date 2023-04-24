@@ -13,7 +13,7 @@ public:
     Graph* vertex(int num);
     Graph* edge(int num);
     Graph* connected(bool flag);
-    void generate() override;
+    void generate(bool re) override;
     Node* clone() override;
     void destroy() override;
     void out() override;

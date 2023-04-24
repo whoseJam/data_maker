@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "../include/Edge.h"
-#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Destroy.h"
 
@@ -11,18 +10,13 @@ using namespace std;
 Edge::Edge() {
     start = UNSET;
     end = UNSET;
+    attrs = new AttributeGroup();
     fmt = "$s $t";
 }
 
 Edge::Edge(const Edge& other) {
-    for (auto attr : other.attrs) {
-        attrs.push_back((Attribute*)attr->clone());
-    }
-}
-
-Edge* Edge::add_attribute(Attribute* attr) {
-    attrs.push_back(attr);
-    return this;
+    attrs = (AttributeGroup*)other.attrs->clone();
+    fmt = other.fmt;
 }
 
 Edge* Edge::format(const string& fmt) {
@@ -30,24 +24,23 @@ Edge* Edge::format(const string& fmt) {
     return this;
 }
 
-void Edge::__set_start_and_end(int start, int end) {
+Edge* Edge::__set_start_and_end(int start, int end) {
     this->start = start;
     this->end = end;
+    return this;
 }
 
-void Edge::generate() {
-    if (generated) return;
+void Edge::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
     
-    for (auto attr : attrs) {
-        attr->generate();
-    }
+    CL_GENERATE(attrs);
 }
 
 Node* Edge::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Edge(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new Edge(*this);
+    return this;
 }
 
 void Edge::destroy() {
@@ -55,25 +48,33 @@ void Edge::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    for (Attribute* attr : attrs) {
-        attr->destroy();
-    }
+    CL_DESTROY(attrs);
 }
 
 void Edge::out() {
     CHECK_STRING_UNSET(Edge, fmt);
-    Format::parse(fmt, this);
+    Format::parse(this, fmt, "Edge", false);
 }
 
-void Edge::parse(const std::string& spec, ...) {
+bool Edge::equal(Node* o) {
+    Edge* other = dynamic_cast<Edge*>(o);
+    if (other == nullptr) return false;
+    return (start == other->start && end == other->end && attrs->equal(other->attrs));
+}
+
+void Edge::parse(const std::string& spec, int n, ...) {
+    ParseStack("Edge");
     va_list valist;
-    va_start(valist, spec);
+    va_start(valist, n);
     if (spec == SPEC_START) {
         cout << start;
     } else if (spec == SPEC_TO) {
         cout << end;
-    } else if (spec == SPEC_ATTR) {
-        HANDLE_SPEC_A(valist, attrs);
+    } else if (spec == SPEC_SELF) {
+        if (n == 1) {
+            char* attr_name = va_arg(valist, char*);
+            attrs->parse(SPEC_ATTR, 1, attr_name);
+        }
     } else {
         MESSAGE_NOT_FOUND_IN_FORMAT(Edge, spec);
     }
@@ -90,4 +91,8 @@ void Edge::parse_next() {
 
 bool Edge::parse_finish() {
     return cur_iter > 0;
+}
+
+bool Edge::is_last() {
+    return true;
 }

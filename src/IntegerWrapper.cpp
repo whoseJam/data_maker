@@ -1,61 +1,53 @@
 #include <string>
 #include <iostream>
 
-#include "../include/Clone.h"
 #include "../include/Define.h"
+#include "../include/Format.h"
 #include "../include/Destroy.h"
+#include "../include/Integer.h"
 #include "../include/IntegerWrapper.h"
 
 using namespace std;
+using namespace Format;
 
-IntegerWrapper::IntegerWrapper(const string& class_name, const string& var_name) {
+IntegerWrapper::IntegerWrapper() {
     int_value = UNSET;
     integer_value = nullptr;
-    var = var_name;
-    cls = class_name;
 }
 
 IntegerWrapper::IntegerWrapper(const IntegerWrapper& other) {
     int_value = other.int_value;
     integer_value = (Integer*)other.integer_value->clone();
-    var = other.var;
-    cls = other.cls;
 }
 
 int IntegerWrapper::get() {
     if (int_value == UNSET && integer_value == nullptr) {
-        cout << cls << "::" << var << " is UNSET\n";
+        cout << "IntegerWrapper" << "::" << "value" << " is UNSET\n";
         exit(-1);
     }
     if (int_value != UNSET) return int_value;
     if (integer_value != nullptr) return integer_value->value;
-    cout <<  cls << "::" << var << " Unknown Error\n";
+    cout << "IntegerWrapper" << "::" << " Unknown Error\n";
     exit(-1);
 }
 
-void IntegerWrapper::set(int val) {
+IntegerWrapper* IntegerWrapper::value(int val) {
     int_value = val;
     integer_value = nullptr;
+    return this;
 }
 
-void IntegerWrapper::set(Integer* val) {
-    integer_value = val;
-    int_value = UNSET;
-}
-
-void IntegerWrapper::generate() {
-    if (generated) return;
+void IntegerWrapper::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
 
-    if (integer_value != nullptr) {
-        integer_value->generate();
-    }
+    CL_GENERATE(integer_value);
 }
 
 Node* IntegerWrapper::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new IntegerWrapper(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new IntegerWrapper(*this);
+    return this;
 }
 
 void IntegerWrapper::destroy() {
@@ -63,11 +55,15 @@ void IntegerWrapper::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    if (integer_value != nullptr) {
-        integer_value->destroy();
-    }
+    CL_DESTROY(integer_value);
 }
 
 void IntegerWrapper::out() {
     cout << get();
+}
+
+bool IntegerWrapper::equal(Node* o) {
+    IntegerWrapper* other = dynamic_cast<IntegerWrapper*>(o);
+    if (other == nullptr) return false;
+    return get() == other->get();
 }

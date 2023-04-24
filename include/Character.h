@@ -10,14 +10,14 @@ public:
     virtual ~Character();
     Character* lower_bound(char x);
     Character* upper_bound(char x);
-    virtual void generate() override;
+    virtual void generate(bool re) override;
     virtual Node* clone() override;
     virtual void destroy() override;
     virtual void out() override;
+    virtual bool equal(Node* other) override;
 private:
     char l;
     char r;
-    int gflag;
     char value;
 };
 

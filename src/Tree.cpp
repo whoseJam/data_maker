@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "../include/Tree.h"
-#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Random.h"
 #include "../include/Format.h"
@@ -12,50 +11,36 @@ using namespace std;
 using namespace Random;
 using namespace Format;
 
+using TreeFunPtr = void(Tree::*)();
+int Tree::robin_iter = 0;
+TreeFunPtr Tree::gen_func[4] = {
+    &Tree::gen_chain,
+    &Tree::gen_flower,
+    &Tree::gen_long_tree,
+    &Tree::gen_random_tree
+}; 
+
 Tree::Tree() {
-    is_long_tree = false;
-    is_chain = false;
-    is_flower = false;
-    vertex_num = UNSET;
+    tf = RANDOM_TREE;
+    vertex_num = new IntegerWrapper();
     fmt = "UNSET";
 }
 
 Tree::Tree(const Tree& other) {
     vertex_num = other.vertex_num;
-    is_long_tree = other.is_long_tree;
-    is_chain = other.is_chain;
-    is_flower = other.is_flower;
-    for (auto attr : other.attrs) {
-        attrs.push_back((Attribute*)attr->clone());
-    }
+    tf = other.tf;
+    tmpl_edge = (Edge*)other.tmpl_edge->clone();
+    tmpl_vertex = (Vertex*)other.tmpl_vertex->clone();
     fmt = other.fmt;
 }
 
-Tree* Tree::vertex(int num) {
-    vertex_num = num;
+Tree* Tree::size(int num) {
+    vertex_num->value(num);
     return this;
 }
 
-Tree* Tree::chain() {
-    check_flag();
-    is_chain = true;
-    return this;
-}
-
-Tree* Tree::flower() {
-    check_flag();
-    is_flower = true;
-    return this;
-}
-
-Tree* Tree::long_tree() {
-    check_flag();
-    is_long_tree = true;
-    return this;
-}
-
-Tree* Tree::add_attribute(Attribute* attr) {
-    attrs.push_back(attr);
+Tree* Tree::tree_form(TreeForm tf) {
+    this->tf = tf;
     return this;
 }
 
@@ -64,33 +49,44 @@ Tree* Tree::format(const string& fmt) {
     return this;
 }
 
-void Tree::generate() {
-    if (generated) return;
+Tree* Tree::vertex_format(const string& fmt) {
+    this->vertex_fmt = fmt;
+    return this;
+}
+
+Tree* Tree::edge_format(const string& fmt) {
+    this->edge_fmt = fmt;
+    return this;
+}
+
+void Tree::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
-    
-    fa.resize(vertex_num + 5);
-    attr_per_node.resize(vertex_num + 5);
-    if (is_long_tree) gen_long_tree();
-    else if (is_flower) gen_flower();
-    else if (is_chain) gen_chain();
-    else gen_random_tree();
-    for (int i = 1; i <= vertex_num; i++) {
-        if (fa[i] == 0) continue;
-        for (auto attr : attrs) {
-            Clone::get()->prepare();
-            attr_per_node[i].push_back(
-                (Attribute*)attr->clone()
-            );
-        }
-        for (auto attr : attr_per_node[i])
-            attr->generate();
+
+    CHECK_NULL(Tree, tmpl_edge);
+    CHECK_NULL(Tree, tmpl_vertex);
+    CL_GENERATE(vertex_num);
+
+    for (int i = 1 ; i <= vertex_num->get(); i++) {
+        vertices.push_back(
+            ((Vertex*)tmpl_vertex->clone())
+            ->__index(i)
+        );
     }
+    if (tf <= 3) (this->*gen_func[tf])();
+    else if (tf == RANDOM_FORM) (this->*gen_func[rand_int(0, 3)])();
+    else {
+        (this->*gen_func[robin_iter++])();
+        robin_iter %= 4;
+    }
+    CL_GENERATE_ITERABLE(vertices);
+    CL_GENERATE_ITERABLE(edges);
 }
 
 Node* Tree::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Tree(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new Tree(*this);
+    return this;
 }
 
 void Tree::destroy() {
@@ -98,81 +94,159 @@ void Tree::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    for (Attribute* attr : attrs)
-        attr->destroy();
-    for (auto& attrs : attr_per_node) {
-        for (Attribute* attr : attrs) {
-            attr->destroy();
-        }
-    }
+    CL_DESTROY(tmpl_edge);
+    CL_DESTROY(tmpl_vertex);
+    CL_DESTROY_ITERABLE(edges);
+    CL_DESTROY_ITERABLE(vertices);
 }
 
 void Tree::out() {
     CHECK_STRING_UNSET(Tree, fmt);
-    Format::parse(fmt, this);
-}
-
-void Tree::parse(const string& spec, ...) {
-    va_list valist;
-    va_start(valist, spec);
-    
-    va_end(valist);
-}
-
-void Tree::parse_start() {
-    cur_iter = 1;
-}
-
-void Tree::parse_next() {
-    cur_iter++;
-}
-
-bool Tree::parse_finish() {
-    return cur_iter > vertex_num;
-}
-
-void Tree::check_flag() {
-    if (is_long_tree | 
-        is_chain | 
-        is_flower) {
-        cout << "Tree::flag has already been set\n";
-        exit(-1);
+    stat = EMPTY_STATUS;
+    out_seq.clear();
+    Format::parse(this, fmt, "Tree", true);
+    for (int type : out_seq) {
+        stat = type;
+        Format::parse(this, 
+            stat == ITERATE_ON_EDGE ? edge_fmt : 
+            stat == ITERATE_ON_VERTEX ? vertex_fmt : "UNSET",
+            "Tree", false
+        );
     }
 }
 
+bool Tree::equal(Node* o) {
+    Tree* other = dynamic_cast<Tree*>(o);
+    if (other == nullptr) return false;
+    if (!vertex_num->equal(other->vertex_num)) return false;
+    if (vertex_num->get() >= 10) return false;  //WARNING
+    for (int i = 0; i < edges.size(); i++)
+        if (!edges[i]->equal(other->edges[i])) return false;
+    for (int i = 0; i < vertices.size(); i++)
+        if (!vertices[i]->equal(other->vertices[i])) return false;
+    return true;
+}
+
+void Tree::parse(const string& spec, int n, ...) {
+    ParseStack("Tree");
+    try {
+        CALL_FORMATTER(spec, n);
+    } catch (SpecNotFoundException& e) {
+        va_list valist;
+        va_start(valist, n);
+        if (stat == EMPTY_STATUS) {
+            if (spec == SPEC_ITERATE_ON_EDGE) {
+                CHECK_FUNCTION_ARGS_MATCH(Tree, spec, n, 0);
+                out_seq.push_back(ITERATE_ON_EDGE);
+            } else if (spec == SPEC_ITERATE_ON_VERTEX) {
+                CHECK_FUNCTION_ARGS_MATCH(Tree, spec, n, 0);
+                out_seq.push_back(ITERATE_ON_VERTEX);
+            } else {
+                MESSAGE_NOT_FOUND_IN_FORMAT(Tree, spec);
+            }
+        } else if (stat == ITERATE_ON_EDGE) {
+            Edge* self = edges[cur_edge_iter];
+            Vertex* fa = vertices[self->start];
+            Vertex* son = vertices[self->end];
+            if (spec == SPEC_FA) {                                                      // fa[?]
+                CHECK_FUNCTION_ARGS_MATCH_IN_RANGE(Tree, spec, n, 0, 1);
+                if (n == 0) cout << fa->idx;                                            // fa
+                else if (n == 1) {                                                      // fa[attr]
+                    char* attr_name = va_arg(valist, char*);
+                    fa->parse(SPEC_SELF, 1, attr_name);                                 // -> x[attr]
+                }
+            } else if (spec == SPEC_SON) {                                              // son[?]
+                CHECK_FUNCTION_ARGS_MATCH_IN_RANGE(Tree, spec, n, 0, 1);
+                if (n == 0) cout << son->idx;                                           // son
+                else if (n == 1) {                                                      // son[attr]
+                    char* attr_name = va_arg(valist, char*);
+                    son->parse(SPEC_SELF, 1, attr_name);                                // -> x[attr]
+                }
+            } else if (spec == SPEC_SELF) {                                             // x[attr]
+                CHECK_FUNCTION_ARGS_MATCH(Tree, spec, n, 1);
+                char* attr_name = va_arg(valist, char*);
+                self->parse(SPEC_SELF, 1, attr_name);
+            } else {
+                MESSAGE_NOT_FOUND_IN_FORMAT(Tree, spec);
+            }
+        }
+        if (stat == ITERATE_ON_VERTEX) {
+            Vertex* self = vertices[cur_vertex_iter];
+            if (spec == SPEC_SELF) {                                                    // x[?]
+                CHECK_FUNCTION_ARGS_MATCH_IN_RANGE(Tree, spec, n, 0, 1);
+                if (n == 0) cout << vertices[cur_vertex_iter]->idx;                     // x
+                else if (n == 1) {                                                      // x[attr]
+                    char* attr_name = va_arg(valist, char*);
+                    self->parse(SPEC_SELF, 1, attr_name);                               // -> x[attr]
+                }
+            } else {
+                MESSAGE_NOT_FOUND_IN_FORMAT(Tree, spec);
+            }
+        }
+        va_end(valist);
+    }
+}
+
+void Tree::parse_start() {
+    cur_iter = 0;
+    cur_edge_iter = 0;
+    cur_vertex_iter = 0;
+}
+
+void Tree::parse_next() {
+    if (stat == EMPTY_STATUS) cur_iter++;
+    if (stat == ITERATE_ON_EDGE) cur_edge_iter++;
+    if (stat == ITERATE_ON_VERTEX) cur_vertex_iter++;
+}
+
+bool Tree::parse_finish() {
+    if (stat == EMPTY_STATUS) return cur_iter > 0;
+    if (stat == ITERATE_ON_EDGE) return cur_edge_iter >= edges.size();
+    if (stat == ITERATE_ON_VERTEX) return cur_vertex_iter >= vertices.size();
+    return true;
+}
+
+bool Tree::is_last() {
+    if (stat == ITERATE_ON_EDGE) return cur_edge_iter == edges.size() - 1;
+    if (stat == ITERATE_ON_VERTEX) return cur_vertex_iter == vertices.size() - 1;
+    return true;
+}
+
+void Tree::add_edge(int f, int s) {
+    Edge* edge = (Edge*)tmpl_edge->clone();
+    edge->__set_start_and_end(f, s);
+    edges.push_back(edge);
+}
+
 void Tree::gen_random_tree() {
-    fa[1] = 0;
-    for (int i = 2; i <= vertex_num; i++) {
-        int parent = rand_int(1, i - 1);
-        fa[i] = parent;
+    for (int i = 1; i < vertex_num->get(); i++) {
+        int parent = rand_int(0, i - 1);
+        add_edge(parent, i);
     }
 }
 
 void Tree::gen_flower() {
-    fa[1] = 0;
-    for (int i = 2; i <= vertex_num; i++) {
-        fa[i] = 1;
+    for (int i = 1; i < vertex_num->get(); i++) {
+        add_edge(0, i);
     }
 }
 
 void Tree::gen_chain() {
-    fa[1] = 0;
-    for (int i = 2; i <= vertex_num; i++) {
-        fa[i] = i - 1;
+    for (int i = 1; i < vertex_num->get(); i++) {
+        add_edge(i - 1, i);
     }
 }
 
 void Tree::gen_long_tree() {
-    fa[1] = 0;
     typedef pair<int,int> pa;
     vector<pa> fetch_set;
-    fetch_set.push_back(make_pair(1, 1));
-    int limit = vertex_num / 4;
-    for (int i = 2; i <= vertex_num; i++) {
+    fetch_set.push_back(make_pair(0, 1));
+    int limit = vertex_num->get() / 4;
+    for (int i = 1; i < vertex_num->get(); i++) {
         pa p = RAND_AND_TAKE_OUT_FROM_VECTOR(fetch_set, pa);
         int parent = p.first;
         int depth = p.second;
-        fa[i] = parent;
+        add_edge(parent, i);
         fetch_set.push_back(make_pair(i, depth + 1));
         if (depth >= limit) {
             fetch_set.push_back(make_pair(i, depth + 1));

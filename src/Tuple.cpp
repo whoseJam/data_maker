@@ -1,7 +1,6 @@
 
 #include <iostream>
 
-#include "../include/Clone.h"
 #include "../include/Tuple.h"
 #include "../include/Define.h"
 #include "../include/Format.h"
@@ -18,9 +17,8 @@ Tuple::Tuple() {
 Tuple::Tuple(const Tuple& other) {
     len = other.len;
     fmt = other.fmt;
-    for (Node* ele : other.elements) {
+    for (Node* ele : other.elements) 
         elements.push_back(ele->clone());
-    }
 }
 
 Tuple::~Tuple() {
@@ -29,35 +27,20 @@ Tuple::~Tuple() {
 #endif
 }
 
-Tuple* Tuple::append(Node* ele) {
-    elements.push_back(ele);
-    return this;
-}
-
-Tuple* Tuple::unshift(Node* ele) {
-    elements.insert(elements.begin(), ele);
-    return this;
-}
-
-
 Tuple* Tuple::format(const string& fmt) {
     this->fmt = fmt;
     return this;
 }
 
-void Tuple::generate() {
-    if (generated) return;
+void Tuple::generate(bool re) {
+    if (generated && !re) return;
     generated = true;
 
-    for (Node* ele : elements) {
-        ele->generate();
-    }
+    CL_GENERATE_ITERABLE(elements);
 }
 
 Node* Tuple::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Tuple(*this));
-    return (Node*)Clone::get()->check(this);
+    return (Node*)new Tuple(*this);
 }
 
 void Tuple::destroy() {
@@ -65,29 +48,37 @@ void Tuple::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    for (Node* ele : elements) {
-        ele->destroy();
-    }
+    CL_DESTROY_ITERABLE(elements);
 }
 
 void Tuple::out() {
     CHECK_STRING_UNSET(Tuple, fmt);
-    Format::parse(fmt, this);
+    Format::parse(this, fmt, "Tuple", false);
 }
 
-void Tuple::parse(const string& spec, ...) {
-    va_list valist;
-    va_start(valist, spec);
-    if (spec == SPEC_LAST) {
-        HANDLE_SPEC_LAST(valist, cur_iter, elements.size() - 1);
-    } else if (spec == SPEC_NLAST) {
-        HANDLE_SPEC_NLAST(valist, cur_iter, elements.size() - 1);
-    } else if (spec == SPEC_SELF) {
-        elements[cur_iter]->out();
-    } else {
-        MESSAGE_NOT_FOUND_IN_FORMAT(Tuple, spec);
+bool Tuple::equal(Node* o) {
+    Tuple* other = dynamic_cast<Tuple*>(o);
+    if (other == nullptr) return false;
+    if (elements.size() != other->elements.size()) return false;
+    for (int i = 0; i < elements.size(); i++)
+        if (!elements[i]->equal(other->elements[i])) return false;
+    return true;
+}
+
+void Tuple::parse(const string& spec, int n, ...) {
+    try {
+        CALL_FORMATTER(spec, n);
+    } catch (SpecNotFoundException& e) {
+        va_list valist;
+        va_start(valist, n);
+        if (spec == SPEC_SELF) {
+            CHECK_FUNCTION_ARGS_MATCH(Tuple, spec, n, 0);
+            elements[cur_iter]->out();
+        } else {
+            MESSAGE_NOT_FOUND_IN_FORMAT(Tuple, spec);
+        }
+        va_end(valist);
     }
-    va_end(valist);
 }
 
 void Tuple::parse_start() {
@@ -100,4 +91,8 @@ void Tuple::parse_next() {
 
 bool Tuple::parse_finish() {
     return cur_iter >= elements.size();
+}
+
+bool Tuple::is_last() {
+    return cur_iter == elements.size() - 1;
 }

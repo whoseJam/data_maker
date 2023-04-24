@@ -1,22 +1,22 @@
 
 #include <iostream>
 
-#include "../include/Clone.h"
 #include "../include/Define.h"
 #include "../include/Vertex.h"
 #include "../include/Destroy.h"
 
 using namespace std;
 
-Vertex::Vertex(int idx) {
-    this->idx = idx;
+Vertex::Vertex() {
+    idx = UNSET;
+    attrs = new AttributeGroup();
+    fmt = "$x";
 }
 
 Vertex::Vertex(const Vertex& other) {
     idx = other.idx;
-    for (Attribute* attr : other.attrs) {
-        attrs.push_back((Attribute*)attr->clone());
-    }
+    attrs = (AttributeGroup*)other.attrs->clone();
+    fmt = other.fmt;
 }
 
 Vertex::~Vertex() {
@@ -25,8 +25,8 @@ Vertex::~Vertex() {
 #endif
 }
 
-Vertex* Vertex::add_attribute(Attribute* attr) {
-    attrs.push_back(attr);
+Vertex* Vertex::__index(int idx) {
+    this->idx = idx;
     return this;
 }
 
@@ -35,18 +35,18 @@ Vertex* Vertex::format(const string& fmt) {
     return this;
 }
 
-void Vertex::generate() {
+void Vertex::generate(bool re) {
     if (generated) return;
     generated = true;
 
-    for (Attribute* attr : attrs)
-        attr->generate();
+    CHECK_UNSET(Vertex, idx);
+    CL_GENERATE(attrs);
 }
 
 Node* Vertex::clone() {
-    if (!Clone::get()->check(this))
-        Clone::get()->insert(this, new Vertex(*this));
-    return (Node*)Clone::get()->check(this);
+    if (type == STRUCTURE_NODE)
+        return (Node*)new Vertex(*this);
+    return this;
 }
 
 void Vertex::destroy() {
@@ -54,26 +54,38 @@ void Vertex::destroy() {
     destroyed = true;
 
     Destroy::get()->add(this);
-    for (Attribute* attr : attrs)
-        attr->destroy();
+    attrs->destroy();
 }
 
 void Vertex::out() {
     CHECK_STRING_UNSET(Vertex, fmt);
-    Format::parse(fmt, this);
+    Format::parse(this, fmt, "Vertex", false);
 }
 
-void Vertex::parse(const string& spec, ...) {
-    va_list valist;
-    va_start(valist, spec);
-    if (spec == SPEC_SELF) {
-        cout << idx;
-    } else if (spec == SPEC_ATTR) {
-        HANDLE_SPEC_A(valist, attrs);
-    } else {
-        MESSAGE_NOT_FOUND_IN_FORMAT(Vertex, spec);
+bool Vertex::equal(Node* o) {
+    Vertex* other = dynamic_cast<Vertex*>(o);
+    if (other == nullptr) return false;
+    return (idx == other->idx && attrs->equal(other->attrs));
+}
+
+void Vertex::parse(const string& spec, int n, ...) {
+    try {
+        CALL_FORMATTER(spec, n);
+    } catch (SpecNotFoundException& e) {
+        va_list valist;
+        va_start(valist, n);
+        if (spec == SPEC_SELF) {
+            CHECK_FUNCTION_ARGS_MATCH_IN_RANGE(Vertex, spec, n, 0, 1);
+            if (n == 0) cout << idx;
+            else if (n == 1) {
+                char* attr_name = va_arg(valist, char*);
+                attrs->parse(SPEC_ATTR, 1, attr_name);
+            }
+        } else {
+            MESSAGE_NOT_FOUND_IN_FORMAT(Vertex, spec);
+        }
+        va_end(valist);
     }
-    va_end(valist);
 }
 
 void Vertex::parse_start() {
@@ -86,4 +98,8 @@ void Vertex::parse_next() {
 
 bool Vertex::parse_finish() {
     return cur_iter > 0;
+}
+
+bool Vertex::is_last() {
+    return true;
 }

@@ -9,7 +9,7 @@ lib:
 	ar cr ./dist/libdata.a $(B_OBJECTS)
 
 dmaker: ./dist/libdata.a
-	g++ ./maker/$(SOURCE) -o data -L./dist/ -ldata
+	g++ ./maker/$(SOURCE) -o data $(INCLUDES) -L./dist/ -ldata
 
 clean:
 	$(MAKE) clean -C ./src

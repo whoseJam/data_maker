@@ -17,6 +17,12 @@ void close_freopen() {
     freopen("/dev/tty","w",stdout);
 }
 
+void ensure_folder_exist(const string& name) {
+    char buffer[1<<10];
+    sprintf(buffer, "mkdir -p %s", name.c_str());
+    system(buffer);
+}
+
 IO::IOPack::IOPack(int l, int r, Genfun gen) {
     this->l = l;
     this->r = r;
@@ -28,6 +34,7 @@ IO::IO() {
     output_pre = "UNSET";
     output_suf = "UNSET";
     input_pre = "UNSET";
+    skip_exist_data = false;
 }
 
 IO* IO::testcase(int l, int r, Genfun gen) {
@@ -64,6 +71,11 @@ IO* IO::working_directory(const string& str) {
     return this;
 }
 
+IO* IO::skip_generate_existing_data() {
+    skip_exist_data = true;
+    return this;
+}
+
 void IO::generate() {
     if (packs.size() == 0) {
         cout << "IO::testcase is empty\n";
@@ -90,15 +102,20 @@ void IO::generate() {
     CHECK_STRING_UNSET(IO, output_pre);
     CHECK_STRING_UNSET(IO, output_suf);
     CHECK_STRING_UNSET(IO, working_dir);
+    ensure_folder_exist(working_dir);
+    
     for (int i = 0; i < packs.size(); i++) {
         IOPack& now = packs[i];
         for (int idx = now.l; idx <= now.r; idx++) {
             close_freopen();
             cout << "making test data " << idx << "\n";
             string in_path = working_dir + "/" + input_pre + to_string(idx) + "." + input_suf;
+            if (skip_exist_data && check_file_exist(in_path)) {
+                cout << "test data already exist, skip\n";
+                continue;
+            }
             freopen(in_path.c_str(), "w", stdout);
             string out_path = working_dir + "/" + output_pre + to_string(idx) + "." + output_suf;
-            
             now.gen();
         }
     }
@@ -141,6 +158,6 @@ void IO::generate() {
         sprintf(cmd, "rm %s", std_exec_path.c_str());
         system(cmd);
     } else {
-        cout << "Warning : std no found";
+        cout << "Warning : std no found\n";
     }
 }
