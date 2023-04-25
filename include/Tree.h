@@ -1,6 +1,7 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include <map>
 #include <string>
 #include <vector>
 #include <functional>
@@ -9,6 +10,8 @@
 #include "Vertex.h"
 #include "Format.h"
 #include "Attribute.h"
+
+class TreePanel;
 
 class Tree : 
     public Node, 
@@ -26,6 +29,7 @@ public:
     Tree* format(const std::string& fmt);
     Tree* vertex_format(const std::string& fmt);
     Tree* edge_format(const std::string& fmt);
+    TreePanel* get_panel();
     virtual void generate(bool re) override;
     virtual Node* clone() override;
     virtual void destroy() override;
@@ -36,6 +40,8 @@ public:
     virtual void parse_next() override;
     virtual bool parse_finish() override;
     virtual bool is_last() override;
+
+    friend class TreePanel;
 private:
     void gen_long_tree();
     void gen_random_tree();
@@ -43,10 +49,11 @@ private:
     void gen_chain();
     void add_edge(int x, int y);
 
-//  static helper
+//  inner helper
     using TreeFunPtr = void(Tree::*)();
     static int robin_iter;
     static TreeFunPtr gen_func[4];
+    TreePanel* panel;
 
 //  define stage
     IntegerWrapper* vertex_num;
@@ -66,6 +73,29 @@ private:
     int cur_iter;
     int cur_vertex_iter;
     int cur_edge_iter;
+};
+
+class TreePanel {
+public:
+    TreePanel(Tree* parent);
+    void root(int idx);
+    Attribute* node_attribute(int idx, const std::string& name);
+    Attribute* edge_attribute(int x, int y, const std::string& name);
+    std::vector<Attribute*> subtree_attribute(int idx, const std::string& name);
+
+    friend class Tree;
+private:
+    void build();
+    void dfs(int x, int f);
+    void dfs_get_attrs(int x,
+    const std::string& name, 
+    std::vector<Attribute*>&);
+
+    Tree* parent;
+    int cur_root;
+    std::vector<std::vector<int>> tr;
+    std::vector<int> fa;
+    std::map<std::pair<int, int>, Edge*> edges;
 };
 
 #endif

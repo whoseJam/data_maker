@@ -8,6 +8,7 @@
 using namespace std;
 
 Edge::Edge() {
+    panel = new EdgePanel(this);
     start = UNSET;
     end = UNSET;
     attrs = new AttributeGroup();
@@ -15,6 +16,7 @@ Edge::Edge() {
 }
 
 Edge::Edge(const Edge& other) {
+    panel = new EdgePanel(this);
     attrs = (AttributeGroup*)other.attrs->clone();
     fmt = other.fmt;
 }
@@ -22,6 +24,10 @@ Edge::Edge(const Edge& other) {
 Edge* Edge::format(const string& fmt) {
     this->fmt = fmt;
     return this;
+}
+
+EdgePanel* Edge::get_panel() {
+    return panel;
 }
 
 Edge* Edge::__set_start_and_end(int start, int end) {
@@ -95,4 +101,20 @@ bool Edge::parse_finish() {
 
 bool Edge::is_last() {
     return true;
+}
+
+EdgePanel::EdgePanel(Edge* parent) {
+    this->parent = parent;
+}
+
+Attribute* EdgePanel::get(const string& name) {
+    return parent->attrs->get_panel()->get(name);
+}
+
+int EdgePanel::get_start() {
+    return parent->start;
+}
+
+int EdgePanel::get_end() {
+    return parent->end;
 }

@@ -9,12 +9,14 @@ using namespace std;
 using namespace Format;
 
 Array::Array() {
+    panel = new ArrayPanel(this);
     len = new IntegerWrapper();
     tmpl_ele = nullptr;
     fmt = "$x";
 }
 
 Array::Array(const Array& other) {
+    panel = new ArrayPanel(this);
     len = (IntegerWrapper*)other.len->clone();
     tmpl_ele = other.tmpl_ele->clone();
     fmt = other.fmt;
@@ -41,6 +43,15 @@ Array* Array::unique() {
     return this;
 }
 
+Array* Array::satisfy(function<bool(ArrayPanel*, int)> cond) {
+    checker = cond;
+    return this;
+}
+
+ArrayPanel* Array::get_panel() {
+    return panel;
+}
+
 void Array::generate(bool re) {
     if (generated && !re) return;
     generated = true;
@@ -51,17 +62,19 @@ void Array::generate(bool re) {
         elements.push_back(tmpl_ele->clone());
     for (int i = 0; i < elements.size(); i++) {
         elements[i]->generate(re);
-        if (unique_flag) {
-            int cnt = 0;
-            auto check_continue = [&]() {
+        int cnt = 0;
+        auto check_continue = [&]() {
+            if (unique_flag) {
                 for (int j = 0; j < i; j++) {
                     if (elements[j]->equal(elements[i])) return true;
                 } return false;
-            };
-            while(check_continue()) {
-                elements[i]->generate(true); cnt++;
-                if (cnt >= MAX_RETRY) MESSAGE_MAX_RETRY_EXCEED(Array);
             }
+            if (checker) return !checker(panel, i);
+            return false;
+        };
+        while(check_continue()) {
+            elements[i]->generate(true); cnt++;
+            if (cnt >= MAX_RETRY) MESSAGE_MAX_RETRY_EXCEED(Array);
         }
     }
     CL_GENERATE_ITERABLE(elements);
@@ -77,6 +90,7 @@ void Array::destroy() {
     if (destroyed) return;
     destroyed = true;
 
+    delete panel;
     Destroy::get()->add(this);
     len->destroy();
     CL_DESTROY(len);
@@ -129,4 +143,8 @@ bool Array::parse_finish() {
 
 bool Array::is_last() {
     return cur_iter == len->get() - 1;
+}
+
+ArrayPanel::ArrayPanel(Array* parent) {
+    this->parent = parent;
 }

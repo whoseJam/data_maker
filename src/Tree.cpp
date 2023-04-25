@@ -21,17 +21,23 @@ TreeFunPtr Tree::gen_func[4] = {
 }; 
 
 Tree::Tree() {
+    panel = new TreePanel(this);
     tf = RANDOM_TREE;
     vertex_num = new IntegerWrapper();
     fmt = "UNSET";
+    vertex_fmt = "UNSET";
+    edge_fmt = "UNSET";
 }
 
 Tree::Tree(const Tree& other) {
+    panel = new TreePanel(this);
     vertex_num = other.vertex_num;
     tf = other.tf;
     tmpl_edge = (Edge*)other.tmpl_edge->clone();
     tmpl_vertex = (Vertex*)other.tmpl_vertex->clone();
     fmt = other.fmt;
+    vertex_fmt = other.vertex_fmt;
+    edge_fmt = other.edge_fmt;
 }
 
 Tree* Tree::size(int num) {
@@ -59,6 +65,10 @@ Tree* Tree::edge_format(const string& fmt) {
     return this;
 }
 
+TreePanel* Tree::get_panel() {
+    return panel;
+}
+
 void Tree::generate(bool re) {
     if (generated && !re) return;
     generated = true;
@@ -81,6 +91,7 @@ void Tree::generate(bool re) {
     }
     CL_GENERATE_ITERABLE(vertices);
     CL_GENERATE_ITERABLE(edges);
+    panel->build();
 }
 
 Node* Tree::clone() {
@@ -93,6 +104,7 @@ void Tree::destroy() {
     if (destroyed) return;
     destroyed = true;
 
+    delete panel;
     Destroy::get()->add(this);
     CL_DESTROY(tmpl_edge);
     CL_DESTROY(tmpl_vertex);
@@ -250,6 +262,67 @@ void Tree::gen_long_tree() {
         fetch_set.push_back(make_pair(i, depth + 1));
         if (depth >= limit) {
             fetch_set.push_back(make_pair(i, depth + 1));
+        }
+    }
+}
+
+TreePanel::TreePanel(Tree* parent) {
+    this->parent = parent;
+}
+
+void TreePanel::root(int idx) {
+    if (cur_root != idx) {
+        cur_root = idx;
+        dfs(cur_root, 0);
+    }
+}
+
+Attribute* TreePanel::node_attribute(int idx, const std::string& name) {
+    return parent->vertices[idx]->get_panel()->get(name);
+}
+
+Attribute* TreePanel::edge_attribute(int x, int y, const std::string& name) {
+    if (x > y) swap(x, y);
+    pair<int, int> pa = make_pair(x, y);
+    if (edges.find(pa) == edges.end()) {
+        return nullptr;
+    }
+    return edges[pa]->get_panel()->get(name);
+}
+
+vector<Attribute*> TreePanel::subtree_attribute(int idx, const string& name) {
+    vector<Attribute*> ans;
+    dfs_get_attrs(idx, name, ans);
+    return ans;
+}
+
+void TreePanel::build() {
+    int n = parent->vertex_num->get();
+    tr.resize(n); fa.resize(n);
+    for (int i = 0; i < n; i++) fa[i] = -1;
+    for (auto edge : parent->edges) {
+        auto panel = edge->get_panel();
+        tr[panel->get_start()].push_back(panel->get_end());
+        tr[panel->get_end()].push_back(panel->get_start());
+    }
+    dfs(cur_root=0, -1);
+}
+
+
+void TreePanel::dfs(int x, int f) {
+    fa[x] = f;
+    for (int to : tr[x]) {
+        if (fa[to] == -1 && to != cur_root) {
+            dfs(to, x);
+        }
+    }
+}
+
+void TreePanel::dfs_get_attrs(int x, const string& name, vector<Attribute*>& ans) {
+    ans.push_back(node_attribute(x, name));
+    for (int to : tr[x]) {
+        if (fa[to] == x) {
+            dfs_get_attrs(to, name, ans);
         }
     }
 }

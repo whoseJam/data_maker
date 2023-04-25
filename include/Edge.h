@@ -8,6 +8,8 @@
 #include "Attribute.h"
 #include "AttributeGroup.h"
 
+class EdgePanel;
+
 class Edge : 
     public Node, 
     public Formatter {
@@ -16,6 +18,7 @@ public:
     Edge(const Edge& other);
     CL_UPDATE_FUNC(Edge, add_attribute, attrs, UF_add_attribute);
     Edge* format(const std::string& fmt);
+    EdgePanel* get_panel();
     virtual void generate(bool re) override;
     virtual Node* clone() override;
     virtual void destroy() override;
@@ -31,7 +34,11 @@ public:
 
     friend class Tree;
     friend class Graph;
+    friend class EdgePanel;
 private:
+//  inner helper
+    EdgePanel* panel;
+
 //  define stage;
     AttributeGroup* attrs;
 
@@ -41,6 +48,16 @@ private:
 
 //  output stage
     int cur_iter;
+};
+
+class EdgePanel {
+public:
+    EdgePanel(Edge* parent);
+    Attribute* get(const std::string& name);
+    int get_start();
+    int get_end();
+private:
+    Edge* parent;
 };
 
 #endif

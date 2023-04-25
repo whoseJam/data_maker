@@ -8,13 +8,19 @@ using namespace std;
 using namespace Format;
 
 AttributeGroup::AttributeGroup() {
+    panel = new AttributeGroupPanel(this);
     fmt = "UNSET";
 }
 
 AttributeGroup::AttributeGroup(const AttributeGroup& other) {
+    panel = new AttributeGroupPanel(this);
     fmt = other.fmt;
     for (auto attr : other.attrs)
         attrs.push_back((Attribute*)attr->clone());
+}
+
+AttributeGroupPanel* AttributeGroup::get_panel() {
+    return panel;
 }
 
 void AttributeGroup::generate(bool re) {
@@ -61,7 +67,7 @@ void AttributeGroup::parse(const string& spec, int n, ...) {
         bool attr_found = false;
         string attr_name = va_arg(valist, char*);
         for (Attribute* attr : attrs) {
-            if (attr_name == attr->__get_key()) {
+            if (attr_name == attr->key) {
                 attr->out();
                 attr_found = true;
                 break;
@@ -89,4 +95,17 @@ bool AttributeGroup::parse_finish() {
 
 bool AttributeGroup::is_last() {
     return true;
+}
+
+AttributeGroupPanel::AttributeGroupPanel(AttributeGroup* parent) {
+    this->parent = parent;
+}
+
+Attribute* AttributeGroupPanel::get(const string& name) {
+    for (Attribute* attr : parent->attrs) {
+        if (attr->key == name) {
+            return attr;
+        }
+    }
+    return nullptr;
 }

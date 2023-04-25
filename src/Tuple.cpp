@@ -10,11 +10,13 @@ using namespace std;
 using namespace Format;
 
 Tuple::Tuple() {
+    panel = new TuplePanel(this);
     len = 0;
     fmt = "$x";
 }
 
 Tuple::Tuple(const Tuple& other) {
+    panel = new TuplePanel(this);
     len = other.len;
     fmt = other.fmt;
     for (Node* ele : other.elements) 
@@ -32,6 +34,10 @@ Tuple* Tuple::format(const string& fmt) {
     return this;
 }
 
+TuplePanel* Tuple::get_panel() {
+    return panel;
+}
+
 void Tuple::generate(bool re) {
     if (generated && !re) return;
     generated = true;
@@ -47,6 +53,7 @@ void Tuple::destroy() {
     if (destroyed) return;
     destroyed = true;
 
+    delete panel;
     Destroy::get()->add(this);
     CL_DESTROY_ITERABLE(elements);
 }
@@ -95,4 +102,12 @@ bool Tuple::parse_finish() {
 
 bool Tuple::is_last() {
     return cur_iter == elements.size() - 1;
+}
+
+TuplePanel::TuplePanel(Tuple* parent) {
+    this->parent = parent;
+}
+
+bool TuplePanel::equal(TuplePanel* other) {
+    return parent->equal(other->parent);
 }

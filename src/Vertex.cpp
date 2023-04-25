@@ -8,12 +8,14 @@
 using namespace std;
 
 Vertex::Vertex() {
+    panel = new VertexPanel(this);
     idx = UNSET;
     attrs = new AttributeGroup();
     fmt = "$x";
 }
 
 Vertex::Vertex(const Vertex& other) {
+    panel = new VertexPanel(this);
     idx = other.idx;
     attrs = (AttributeGroup*)other.attrs->clone();
     fmt = other.fmt;
@@ -35,6 +37,10 @@ Vertex* Vertex::format(const string& fmt) {
     return this;
 }
 
+VertexPanel* Vertex::get_panel() {
+    return panel;
+}
+
 void Vertex::generate(bool re) {
     if (generated) return;
     generated = true;
@@ -53,6 +59,7 @@ void Vertex::destroy() {
     if (destroyed) return;
     destroyed = true;
 
+    delete panel;
     Destroy::get()->add(this);
     attrs->destroy();
 }
@@ -102,4 +109,12 @@ bool Vertex::parse_finish() {
 
 bool Vertex::is_last() {
     return true;
+}
+
+VertexPanel::VertexPanel(Vertex* parent) {
+    this->parent = parent;
+}
+
+Attribute* VertexPanel::get(const string& name) {
+    return parent->attrs->get_panel()->get(name);
 }

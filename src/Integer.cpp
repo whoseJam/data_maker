@@ -12,12 +12,14 @@ using namespace Random;
 using namespace Format;
 
 Integer::Integer() {
+    panel = new IntegerPanel(this);
     l = new IntegerWrapper();
     r = new IntegerWrapper();
     fmt = "$x";
 }
 
 Integer::Integer(const Integer& other) {
+    panel = new IntegerPanel(this);
     l = other.l;
     r = other.r;
     fmt = other.fmt;
@@ -44,6 +46,10 @@ Integer* Integer::format(const string& fmt) {
     return this;
 }
 
+IntegerPanel* Integer::get_panel() {
+    return panel;
+}
+
 void Integer::generate(bool re) {
     if (generated && !re) return;
     generated = true;
@@ -66,6 +72,7 @@ void Integer::destroy() {
     if (destroyed) return;
     destroyed = true;
 
+    delete panel;
     Destroy::get()->add(this);
     CL_DESTROY(l);
     CL_DESTROY(r);
@@ -110,4 +117,20 @@ bool Integer::parse_finish() {
 
 bool Integer::is_last() {
     return true;
+}
+
+IntegerPanel::IntegerPanel(Integer* parent) {
+    this->parent = parent;
+}
+
+int IntegerPanel::get() {
+    return parent->value;
+}
+
+void IntegerPanel::set(int x) {
+    parent->value = x;
+}
+
+bool IntegerPanel::equal(IntegerPanel* other) {
+    return parent->equal(other->parent);
 }
