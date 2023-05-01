@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/hsj/data",
+                "/home/hsj/data/include/AbStructure",
+                "/home/hsj/data/include/DtStructure",
                 "/home/hsj/data/include",
                 "/usr/include/c++/11",
                 "/usr/include/x86_64-linux-gnu/c++/11",
