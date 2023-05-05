@@ -12,32 +12,26 @@
 #include "Logger.h"
 #include "Integer.h"
 #include "HashMap.h"
+#include "Character.h"
 
-class Array : 
+class String : 
     public Node, 
     public Hashable,
     public Iterable,
     public Formatable {
 public:
-    Array();
-    Array(const Array& other);
-    virtual ~Array();
-    std::shared_ptr<Array> length(int len);
-    CL_UPDATE_FUNC(Array, length, len, UF_assign, CK_equal_to(Integer), );
-    CL_UPDATE_FUNC(Array, fill, template_ele, UF_assign, CK_base_is(Node), );
-    std::shared_ptr<Array> format(const std::string& fmt);
-    std::shared_ptr<Array> when_generating_per_element(std::function<void(std::shared_ptr<Array>, int)>);
-    std::shared_ptr<Array> after_generate(std::function<void(std::shared_ptr<Array>)>);
+    String();
+    String(const String& other);
+    virtual ~String();
+    std::shared_ptr<String> length(int len);
+    CL_UPDATE_FUNC(String, length, len, UF_assign, CK_equal_to(Integer), );
+    CL_UPDATE_FUNC(String, fill, template_char, UF_assign, CK_equal_to(Character), );
+    std::shared_ptr<String> format(const std::string& fmt);
+    std::shared_ptr<String> when_generating_per_element(std::function<void(std::shared_ptr<String>, int)>);
+    std::shared_ptr<String> after_generate(std::function<void(std::shared_ptr<String>)>);
 
     int get_length();
-    template<typename T> 
-    std::shared_ptr<T> get(int idx) {
-        CALL("Array", "get");
-        if (idx < 0 || idx >= elements.size()) MESSAGE("Array", INDEX_OUT_OF_BOUNDARY);
-        std::shared_ptr<T> ans = std::dynamic_pointer_cast<T>(elements[idx]);
-        if (!ans) MESSAGE("Array", TYPE_ERROR);
-        return ans;
-    }
+    std::shared_ptr<Character> get(int idx);
 
     virtual void generate(bool re) override;
     virtual std::shared_ptr<Node> clone() override;
@@ -54,22 +48,22 @@ public:
     virtual void parse(const std::string& spec, int n, ...);
 private:
 //  callback
-    std::function<void(std::shared_ptr<Array>, int)> callback_when_generating_per_element;
-    std::function<void(std::shared_ptr<Array>)> callback_after_generate;
+    std::function<void(std::shared_ptr<String>, int)> callback_when_generating_per_element;
+    std::function<void(std::shared_ptr<String>)> callback_after_generate;
 
 //  define stage
     std::shared_ptr<Integer> len;
-    std::shared_ptr<Node> template_ele;
+    std::shared_ptr<Character> template_char;
     
 //  generate stage
-    std::vector<std::shared_ptr<Node>> elements;
+    std::vector<std::shared_ptr<Character>> elements;
 
 //  output stage
     int cur_iter;
 };
 
 namespace mk {
-    std::shared_ptr<Array> array();
+    std::shared_ptr<String> string();
 
     template<typename T, typename CHECKER = 
         std::enable_if_t<
@@ -77,9 +71,9 @@ namespace mk {
             std::is_same_v<
                 Integer,
                 shared_ptr_t<std::decay_t<T>>>>>
-    std::shared_ptr<Array> array(T&& n) {
+    std::shared_ptr<String> string(T&& n) {
         auto n_move = n;
-        return array()->length(std::forward<T>(n_move));
+        return string()->length(std::forward<T>(n_move));
     }
 
     template<typename T, typename E, typename CHECKER = 
@@ -88,13 +82,13 @@ namespace mk {
             std::is_same_v<
                 Integer,
                 shared_ptr_t<std::decay_t<T>>>) &&
-            std::is_base_of_v<
-                Node,
+            std::is_same_v<
+                Character,
                 shared_ptr_t<std::decay_t<E>>>>>
-    std::shared_ptr<Array> array(T&& n, E&& e) {
+    std::shared_ptr<String> string(T&& n, E&& e) {
         auto n_move = n;
         auto e_move = e;
-        return array(std::forward<T>(n_move))->fill(std::forward<E>(e_move));
+        return string(std::forward<T>(n_move))->fill(std::forward<E>(e_move));
     }
 }
 

@@ -6,61 +6,63 @@ using namespace std;
 
 Dsu::Dsu() {
     solved = false;
-    cout<<"Dsu::Dsu\n";
 }
 
 shared_ptr<Dsu> Dsu::bind(shared_ptr<Tree> tr) {
     CALL("Dsu", "bind");
     this->tr = tr;
-    cout<<"fuck\n";
     return dynamic_pointer_cast<Dsu>(shared_from_this());
 }
 
 shared_ptr<Dsu> Dsu::on_dfs_insert(function<void(shared_ptr<Vertex>)> callback) {
     CALL("Dsu", "on_dfs_insert");
-    cout<<"isnert\n";
     callback_on_insert = callback;
-    cout<<"bbbbbb\n";
     return shared_from_this();
 }
 
 shared_ptr<Dsu> Dsu::on_dfs_remove(function<void(shared_ptr<Vertex>)> callback) {
     CALL("Dsu", "on_dfs_remove");
     callback_on_remove = callback;
-    cout<<"fssss\n";
     return dynamic_pointer_cast<Dsu>(shared_from_this());
 }
 
 shared_ptr<Dsu> Dsu::on_dfs_query(function<int()> callback) {
     CALL("Dsu", "on_dfs_query");
     callback_on_query = callback;
-    cout<<"onnnn\n";
     return dynamic_pointer_cast<Dsu>(shared_from_this());
 }
 
 int Dsu::query(int x) {
     CALL("Dsu", "query");
     if (!tr) MESSAGE("Dsu", NEED("bind"));
-    cout<<"query\n";
+    ensure_solved();
+    if (x < 0 || x >= tr->get_size()) MESSAGE("Dsu", INDEX_OUT_OF_BOUNDARY);
+    return ans[x];
+}
+
+int Dsu::get_size(int x) {
+    CALL("Dsu", "get_size");
+    if (!tr) MESSAGE("Dsu", NEED("bind"));
+    ensure_solved();
+    if (x < 0 || x >= tr->get_size()) MESSAGE("Dsu", INDEX_OUT_OF_BOUNDARY);
+    return size[x];
+}
+
+void Dsu::ensure_solved() {
+    CALL("Dsu", "ensure_solved");
     if (!solved) {
-        cout<<"hello\n";
         solved = true;
-        cout<<"world\n";
         tr->generate(0);
-        cout<<"hellO\n";
         int n = tr->get_size();
         size.resize(n);
         son.resize(n);
         ans.resize(n);
-        cout<<"worlD\n";
         dfs_prepare(0, -1);
         if (!callback_on_insert) MESSAGE("Dsu", NEED("on_dfs_insert"));
         if (!callback_on_remove) MESSAGE("Dsu", NEED("on_dfs_remove"));
         if (!callback_on_query) MESSAGE("Dsu", NEED("on_dfs_query"));
         dfs_solve(0, -1);
     }
-    if (x < 0 || x >= tr->get_size()) MESSAGE("Dsu", INDEX_OUT_OF_BOUNDARY);
-    return ans[x];
 }
 
 void Dsu::dfs_prepare(int u, int f) {

@@ -7,8 +7,6 @@
 #include "Node.h"
 #include "Format.h"
 #include "Integer.h"
-#include "Character.h"
-#include "IntegerWrapper.h"
 
 class Permutation : 
     public Node, 
@@ -31,7 +29,6 @@ public:
     virtual bool is_last() override;
 private:
 //  define stage
-    IntegerWrapper* len;
 
 //  generate stage
     std::vector<int> elements;

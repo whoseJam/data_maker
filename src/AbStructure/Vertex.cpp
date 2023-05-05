@@ -1,6 +1,7 @@
 
 #include <iostream>
 
+#include "Clone.h"
 #include "Debug.h"
 #include "Vertex.h"
 #include "Logger.h"
@@ -64,12 +65,7 @@ void Vertex::generate(bool re) {
         attrs[i]->generate(re);
 }
 
-shared_ptr<Node> Vertex::clone() {
-    CALL("Vertex", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Vertex>(*this);
-    return dynamic_pointer_cast<Vertex>(shared_from_this());
-}
+CL_CLONE(Vertex);
 
 void Vertex::out() {
     CALL("Vertex", "out");

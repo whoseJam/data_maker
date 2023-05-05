@@ -1,6 +1,7 @@
 
 #include <iostream>
 
+#include "Clone.h"
 #include "Tuple.h"
 #include "Debug.h"
 
@@ -60,12 +61,7 @@ void Tuple::generate(bool re) {
             dynamic_pointer_cast<Tuple>(shared_from_this()));
 }
 
-shared_ptr<Node> Tuple::clone() {
-    CALL("Tuple", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Tuple>(*this);
-    return dynamic_pointer_cast<Node>(shared_from_this());
-}
+CL_CLONE(Tuple);
 
 void Tuple::out() {
     CALL("Tuple", "out");

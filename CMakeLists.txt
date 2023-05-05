@@ -5,7 +5,8 @@ project(DataMaker)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-set(SRC_LIST maker/test/test_tree.cpp)
+# set(SRC_LIST maker/history/203.cpp)
+set(SRC_LIST maker/test/test_clone.cpp)
 
 include_directories(include)
 include_directories(include/AbStructure)

@@ -3,8 +3,9 @@
 #include <iostream>
 #include <algorithm>
 
-#include "../include/IO.h"
-#include "../include/Define.h"
+#include "IO.h"
+#include "Logger.h"
+#include "Define.h"
 
 using namespace std;
 
@@ -14,7 +15,11 @@ bool check_file_exist(const string& name) {
 }
 
 void close_freopen() {
-    freopen("/dev/tty","w",stdout);
+#ifdef _WIN32
+    freopen("CON", "w", stdout);
+#elif __linux__
+    freopen("/dev/tty", "w", stdout);
+#endif
 }
 
 void ensure_folder_exist(const string& name) {
@@ -37,50 +42,47 @@ IO::IO() {
     skip_exist_data = false;
 }
 
-IO* IO::testcase(int l, int r, Genfun gen) {
+shared_ptr<IO> IO::testcase(int l, int r, Genfun gen) {
     packs.push_back(IOPack(l, r, gen));
-    return this;
+    return shared_from_this();
 }
 
-IO* IO::testcase(int x, Genfun gen) {
+shared_ptr<IO> IO::testcase(int x, Genfun gen) {
     return testcase(x, x, gen);
 }
 
-IO* IO::input_prefix(const string& str) {
+shared_ptr<IO> IO::input_prefix(const string& str) {
     input_pre = str;
-    return this;
+    return shared_from_this();
 }
 
-IO* IO::input_suffix(const string& str) {
+shared_ptr<IO> IO::input_suffix(const string& str) {
     input_suf = str;
-    return this;
+    return shared_from_this();
 }
 
-IO* IO::output_prefix(const string& str) {
+shared_ptr<IO> IO::output_prefix(const string& str) {
     output_pre = str;
-    return this;
+    return shared_from_this();
 }
 
-IO* IO::output_suffix(const string& str) {
+shared_ptr<IO> IO::output_suffix(const string& str) {
     output_suf = str;
-    return this;
+    return shared_from_this();
 }
 
-IO* IO::working_directory(const string& str) {
+shared_ptr<IO> IO::working_directory(const string& str) {
     working_dir = str;
-    return this;
+    return shared_from_this();
 }
 
-IO* IO::skip_generate_existing_data() {
+shared_ptr<IO> IO::skip_generate_existing_data() {
     skip_exist_data = true;
-    return this;
+    return shared_from_this();
 }
 
 void IO::generate() {
-    if (packs.size() == 0) {
-        cout << "IO::testcase is empty\n";
-        exit(-1);
-    }
+    if (packs.size() == 0) MESSAGE("IO", NEED("testcase"));
     sort(packs.begin(), packs.end(), [=](const IOPack& a, const IOPack& b){
         if (a.l != b.l) return a.l < b.l;
         return a.r < b.r;
@@ -88,20 +90,14 @@ void IO::generate() {
     for (int i = 0; i < packs.size() - 1; i++) {
         IOPack& now = packs[i];
         IOPack& nxt = packs[i+1];
-        if (now.r + 1 != nxt.l) {
-            cout << "IO::testcases not tight\n";
-            exit(-1);
-        }
+        if (now.r + 1 != nxt.l) MESSAGE("IO", ENSURE("index of testcases is continuous"));
     }
-    if (packs[0].l != 1) {
-        cout << "IO::the first group of testcases must start from 1\n";
-        exit(-1);
-    }
-    CHECK_STRING_UNSET(IO, input_pre);
-    CHECK_STRING_UNSET(IO, input_suf);
-    CHECK_STRING_UNSET(IO, output_pre);
-    CHECK_STRING_UNSET(IO, output_suf);
-    CHECK_STRING_UNSET(IO, working_dir);
+    if (packs[0].l != 1) MESSAGE("IO", ENSURE("the first group of testcases start from 1"));
+    if (input_pre == "UNSET") MESSAGE("IO", NEED("input_prefix"));
+    if (input_suf == "UNSET") MESSAGE("IO", NEED("input_suffix"));
+    if (output_pre == "UNSET") MESSAGE("IO", NEED("output_prefix"));
+    if (output_suf == "UNSET") MESSAGE("IO", NEED("output_suffix"));
+    if (working_dir == "UNSET") MESSAGE("IO", NEED("working_directory"));
     ensure_folder_exist(working_dir);
     
     for (int i = 0; i < packs.size(); i++) {
@@ -159,5 +155,15 @@ void IO::generate() {
         system(cmd);
     } else {
         cout << "Warning : std no found\n";
+    }
+}
+
+namespace mk {
+    shared_ptr<IO> standard_io() {
+        return make_shared<IO>()
+        ->input_prefix("input")
+        ->input_suffix("txt")
+        ->output_prefix("output")
+        ->output_suffix("txt");
     }
 }

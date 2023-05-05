@@ -17,7 +17,7 @@ class Edge :
 public:
     Edge();
     Edge(const Edge& other);
-    CL_UPDATE_FUNC(Edge, add_attribute, attrs, UF_append_vector);
+    CL_UPDATE_FUNC(Edge, add_attribute, attrs, UF_append_vector, CK_equal_to(Attribute), );
     std::shared_ptr<Edge> format(const std::string& fmt);
     
     int get_start();

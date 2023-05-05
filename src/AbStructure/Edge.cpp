@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "Edge.h"
+#include "Clone.h"
 #include "Debug.h"
 #include "Define.h"
 #include "Logger.h"
@@ -65,12 +66,7 @@ void Edge::generate(bool re) {
     }
 }
 
-shared_ptr<Node> Edge::clone() {
-    CALL("Edge", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Edge>(*this);
-    return dynamic_pointer_cast<Node>(shared_from_this());
-}
+CL_CLONE(Edge);
 
 void Edge::out() {
     CALL("Edge", "out");

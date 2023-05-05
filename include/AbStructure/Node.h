@@ -6,6 +6,7 @@
 class Node {
 public:
     enum {
+        UN_NODE,
         VALUE_NODE,
         STRUCTURE_NODE
     };
@@ -16,15 +17,33 @@ public:
     virtual void generate(bool re) = 0;
     virtual std::shared_ptr<Node> clone() = 0;
     virtual void out() = 0;
-
-    friend void make_structure(std::shared_ptr<Node>);
-    friend void make_value(std::shared_ptr<Node>);
     int type;
-protected:
+public:
+    void implicit_type(int type);
+    void explicit_type(int type);
+    bool explicit_flag;
+public:
     bool generated;
 };
 
-void make_structure(std::shared_ptr<Node>);
-void make_value(std::shared_ptr<Node>);
+namespace mk {
+    template<typename T>
+    T structure(T&& ele) {
+        ele->explicit_type(Node::STRUCTURE_NODE);
+        return ele;
+    }
+
+    template<typename T>
+    T value(T&& ele) {
+        ele->explicit_type(Node::VALUE_NODE);
+        return ele;
+    }
+
+    template<typename T>
+    T un(T&& ele) {
+        ele->explicit_type(Node::UN_NODE);
+        return ele;
+    }
+}
 
 #endif

@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "Debug.h"
+#include "Clone.h"
 #include "Logger.h"
 #include "Attribute.h"
 
@@ -46,12 +47,7 @@ void Attribute::generate(bool re) {
     val->generate(re);
 }
 
-shared_ptr<Node> Attribute::clone() {
-    CALL("Attribute", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Attribute>(*this);
-    return dynamic_pointer_cast<Node>(shared_from_this());
-}
+CL_CLONE(Attribute);
 
 void Attribute::out() {
     CALL("Attribute", "out");

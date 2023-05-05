@@ -1,9 +1,10 @@
 #include <utility>
 #include <iostream>
 
-#include "Array.h"
-#include "Logger.h"
 #include "Debug.h"
+#include "Array.h"
+#include "Clone.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -16,6 +17,8 @@ Array::Array(const Array& other) :
     Node(other), 
     Formatable(other) {
     CALL("Array", "Array");
+    if (!other.len) MESSAGE("Array", NEED("length"));
+    if (!other.template_ele) MESSAGE("Array", NEED("fill"));
     len = dynamic_pointer_cast<Integer>(other.len->clone());
     template_ele = other.template_ele->clone();
 }
@@ -79,12 +82,7 @@ void Array::generate(bool re) {
             dynamic_pointer_cast<Array>(shared_from_this()));
 }
 
-shared_ptr<Node> Array::clone() {
-    CALL("Array", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Array>(*this);
-    return dynamic_pointer_cast<Node>(shared_from_this());
-}
+CL_CLONE(Array);
 
 void Array::out() {
     CALL("Array", "out");

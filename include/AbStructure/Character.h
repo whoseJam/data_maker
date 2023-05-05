@@ -17,14 +17,14 @@ public:
     std::shared_ptr<Character> lower_bound(char x);
     std::shared_ptr<Character> upper_bound(char x);
     std::shared_ptr<Character> format(const std::string& fmt);
-    CL_UPDATE_FUNC(Character, lower_bound, l, UF_set);
-    CL_UPDATE_FUNC(Character, upper_bound, r, UF_set);
+    CL_UPDATE_FUNC(Character, lower_bound, l, UF_set, CK_equal_to(Character), );
+    CL_UPDATE_FUNC(Character, upper_bound, r, UF_set, CK_equal_to(Character), );
 
     char get();
     std::shared_ptr<Character> get_lower_bound();
     std::shared_ptr<Character> get_upper_bound();
     std::shared_ptr<Character> set(char value);
-    CL_UPDATE_FUNC(Character, set, ptr_val, UF_assign);
+    CL_UPDATE_FUNC(Character, set, ptr_val, UF_assign, CK_equal_to(Character), );
 
     virtual void generate(bool re) override;
     virtual std::shared_ptr<Node> clone() override;
@@ -59,7 +59,7 @@ namespace mk {
     std::shared_ptr<Character> character(T&& l, V&& r) {
         auto l_move = l;
         auto r_move = r;
-        return std::make_shared()
+        return std::make_shared<Character>()
             ->lower_bound(std::forward<T>(l_move))
             ->upper_bound(std::forward<T>(r_move));
     }

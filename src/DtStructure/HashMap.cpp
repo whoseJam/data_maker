@@ -6,11 +6,13 @@
 using namespace std;
 
 HashMap::HashMap() {
+    CALL("HashMap", "HashMap");
     diff = 0;
     total = 0;
 }
 
 void HashMap::insert(shared_ptr<Hashable> obj) {
+    CALL("HashMap", "insert");
     uint code = obj->hash_code();
     if (header.find(code) == header.end() || !header[code]) {
         shared_ptr<HashNode> new_node = make_shared<HashNode>();
@@ -37,6 +39,7 @@ void HashMap::insert(shared_ptr<Hashable> obj) {
 }
 
 void HashMap::remove(shared_ptr<Hashable> obj) {
+    CALL("HashMap", "remove");
     uint code = obj->hash_code();
     if (header.find(code) == header.end() || !header[code]) return;
     shared_ptr<HashNode> iter = header[code];
@@ -67,6 +70,7 @@ void HashMap::remove(shared_ptr<Hashable> obj) {
 }
 
 bool HashMap::in_hashmap(shared_ptr<Hashable> obj) {
+    CALL("HashMap", "in_hashmap");
     uint code = obj->hash_code();
     if (header.find(code) == header.end() || !header[code]) return false;
     shared_ptr<HashNode> iter = header[code];
@@ -80,10 +84,12 @@ bool HashMap::in_hashmap(shared_ptr<Hashable> obj) {
 }
 
 int HashMap::query_total() {
+    CALL("HashMap", "query_total");
     return total;
 }
 
 int HashMap::query_different() {
+    CALL("HashMap", "query_different");
     return diff;
 }
 

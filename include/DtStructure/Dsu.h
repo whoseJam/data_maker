@@ -16,7 +16,9 @@ public:
     std::shared_ptr<Dsu> on_dfs_remove(std::function<void(std::shared_ptr<Vertex>)>);
     std::shared_ptr<Dsu> on_dfs_query(std::function<int()>);
     int query(int x);
+    int get_size(int x);
 private:
+    void ensure_solved();
     void dfs_insert(int u, int f);
     void dfs_remove(int u, int f);
     void dfs_prepare(int u, int f);

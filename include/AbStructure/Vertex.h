@@ -18,7 +18,7 @@ public:
     Vertex();
     Vertex(const Vertex& other);
     virtual ~Vertex();
-    CL_UPDATE_FUNC(Vertex, add_attribute, attrs, UF_append_vector);
+    CL_UPDATE_FUNC(Vertex, add_attribute, attrs, UF_append_vector, CK_equal_to(Attribute), );
     std::shared_ptr<Vertex> format(const std::string& fmt);
     
     int get();

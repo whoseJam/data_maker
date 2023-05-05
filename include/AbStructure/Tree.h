@@ -23,10 +23,10 @@ public:
     Tree();
     Tree(const Tree& other);
     std::shared_ptr<Tree> size(int num);
-    CL_UPDATE_FUNC(Tree, size, vertex_num, UF_set);
+    CL_UPDATE_FUNC(Tree, size, vertex_num, UF_set, CK_equal_to(Integer), );
     std::shared_ptr<Tree> tree_form(TreeForm tf);
-    CL_UPDATE_FUNC(Tree, edge, template_edge, UF_assign);
-    CL_UPDATE_FUNC(Tree, vertex, template_vertex, UF_assign);
+    CL_UPDATE_FUNC(Tree, edge, template_edge, UF_assign, CK_equal_to(Edge), );
+    CL_UPDATE_FUNC(Tree, vertex, template_vertex, UF_assign, CK_equal_to(Vertex), );
     std::shared_ptr<Tree> format(const std::string& fmt);
     
     std::shared_ptr<Vertex> get(int u);
@@ -80,7 +80,7 @@ namespace mk {
     std::shared_ptr<Tree> tree();
     template<typename T, typename CHECKER = 
         std::enable_if_t<
-            std::is_same_v<T, int> || 
+            std::is_same_v<std::decay_t<T>, int> || 
             std::is_same_v<
                 Integer, 
                 shared_ptr_t<std::decay_t<T>>>>>

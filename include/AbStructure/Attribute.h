@@ -19,7 +19,7 @@ public:
     Attribute(const Attribute& other);
     virtual ~Attribute();
     std::shared_ptr<Attribute> name(const std::string& name);
-    CL_UPDATE_FUNC(Attribute, value, val, UF_assign);
+    CL_UPDATE_FUNC(Attribute, value, val, UF_assign, CK_base_is(Node), );
     
     template<typename T>
     std::shared_ptr<T> get() {

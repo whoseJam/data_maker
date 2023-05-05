@@ -1,6 +1,7 @@
 
 #include <iostream>
 
+#include "Clone.h"
 #include "Debug.h"
 #include "Logger.h"
 #include "Random.h"
@@ -11,7 +12,7 @@ using namespace Random;
 
 Integer::Integer() {
     CALL("Integer", "Integer");
-    int_val = UNSET;
+    status = EMPTY;
     fmt = "$x";
 }
 
@@ -19,11 +20,12 @@ Integer::Integer(const Integer& other) :
     Node(other),
     Formatable(other) {
     CALL("Integer", "Integer");
-    int_val = UNSET;
-    int_val_is_set = other.int_val_is_set;
-    ptr_val = other.ptr_val;
-    l = other.l;
-    r = other.r;
+    if (other.l) l = dynamic_pointer_cast<Integer>(other.l->clone());
+    if (other.r) r = dynamic_pointer_cast<Integer>(other.r->clone());
+    if (other.op) op = dynamic_pointer_cast<Operator<Integer>>(other.op->clone());
+    status = other.status;
+    int_val = other.int_val;
+    if (other.ptr_val) ptr_val = dynamic_pointer_cast<Integer>(other.ptr_val->clone());
     fmt = other.fmt;
 }
 
@@ -37,6 +39,7 @@ shared_ptr<Integer> Integer::lower_bound(int x) {
     CALL("Integer", "lower_bound");
     if (!l) l = make_shared<Integer>();
     l->set(x);
+    status = BY_LR;
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
@@ -44,6 +47,7 @@ shared_ptr<Integer> Integer::upper_bound(int x) {
     CALL("Integer", "upper_bound");
     if (!r) r = make_shared<Integer>();
     r->set(x);
+    status = BY_LR;
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
@@ -55,25 +59,28 @@ shared_ptr<Integer> Integer::format(const string& fmt) {
 
 int Integer::get() {
     CALL("Integer", "get");
-    if (ptr_val) return ptr_val->get();
-    if (int_val != UNSET) return int_val;
+    if (status == BY_SET_PTR && ptr_val) return ptr_val->get();
+    if (status == BY_LR || status == BY_SET_VAL) return int_val;
+    if (status == BY_OP && op) return op->get();
     MESSAGE("Integer", "get failed because no value is set");
 }
 
 shared_ptr<Integer> Integer::get_lower_bound() {
     CALL("Integer", "get_lower_bound");
+    if (!l) MESSAGE("Integer", NEED("lower_bound"));
     return l;
 }
 
 shared_ptr<Integer> Integer::get_upper_bound() {
     CALL("Integer", "get_upper_bound");
+    if (!r) MESSAGE("Integer", NEED("upper_bound"));
     return r;
 }
 
 shared_ptr<Integer> Integer::set(int x) {
     CALL("Integer", "set");
     int_val = x;
-    int_val_is_set = true;
+    status = BY_SET_VAL;
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
@@ -82,43 +89,39 @@ void Integer::generate(bool re) {
     if (generated && !re) return;
     generated = true;
     
-    if (ptr_val) {
-        if (l) MESSAGE("Integer", CONFLICT("set", "_lower_bound"));
-        if (r) MESSAGE("Integer", CONFLICT("set", "_upper_bound"));
-        ptr_val->generate(re);
-    } else if (int_val_is_set) {
+    if (status == BY_SET_PTR) {
         if (l) MESSAGE("Integer", CONFLICT("set", "lower_bound"));
         if (r) MESSAGE("Integer", CONFLICT("set", "upper_bound"));
-    } else {
+        ptr_val->generate(re);
+    } else if (status == BY_SET_VAL) {
+        if (l) MESSAGE("Integer", CONFLICT("set", "lower_bound"));
+        if (r) MESSAGE("Integer", CONFLICT("set", "upper_bound"));
+    } else if (status == BY_LR){
         if (!l) MESSAGE("Integer", NEED("lower_bound"));
         if (!r) MESSAGE("Integer", NEED("upper_bound"));
         l->generate(re); r->generate(re);
         if (l->get() > r->get()) MESSAGE("Integer", ENSURE("l < r"));
         int_val = rand_int(l->get(), r->get());
+    } else if (status == BY_OP) {
+        if (!op) MESSAGE("Integer", NEED("operator"));
+        op->generate(re);
+    } else {
+        MESSAGE("Integer", NEED("any initialize"));
     }
-#ifdef DEBUG_INTEGER_FLAG
-    cout << "l=" << l->get() << " r=" << r->get() << "\n";
-#endif
 }
 
-shared_ptr<Node> Integer::clone() {
-    CALL("Integer", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Integer>(*this);
-    return dynamic_pointer_cast<Node>(shared_from_this());
-}
+CL_CLONE(Integer);
 
 void Integer::out() {
     CALL("Integer", "out");
     Formatable::parse(
-        enable_shared_from_this<Formatable>::shared_from_this(), fmt, "Integer");
+        shared_from_this(), fmt, "Integer");
 }
 
 bool Integer::equal(shared_ptr<Hashable> o) {
     CALL("Integer", "equal");
-    shared_ptr<Integer> other;
-    other = dynamic_pointer_cast<Integer>(o);
-    if (other == nullptr) return false;
+    shared_ptr<Integer> other = dynamic_pointer_cast<Integer>(o);
+    if (!other) return false;
     return get() == other->get();
 }
 
@@ -139,5 +142,11 @@ void Integer::parse(const string& spec, int n, ...) {
         } else {
             MESSAGE("Integer", FUNC_NOT_FOUND(spec));
         }
+    }
+}
+
+namespace mk {
+    shared_ptr<Integer> integer(int x) {
+        return make_shared<Integer>()->set(x);
     }
 }

@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "Tree.h"
+#include "Clone.h"
 #include "Debug.h"
 #include "Logger.h"
 #include "Random.h"
@@ -94,12 +95,7 @@ void Tree::generate(bool re) {
         edges[i]->generate(re);
 }
 
-shared_ptr<Node> Tree::clone() {
-    CALL("Tree", "clone");
-    if (type == STRUCTURE_NODE)
-        return make_shared<Tree>(*this);
-    return dynamic_pointer_cast<Node>(shared_from_this());
-}
+CL_CLONE(Tree);
 
 void Tree::out() {
     CALL("Tree", "out");

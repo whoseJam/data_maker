@@ -61,6 +61,11 @@ struct get_shared_ptr_inner_type<std::shared_ptr<T>> {
 template<typename T>
 using shared_ptr_t = typename get_shared_ptr_inner_type<T>::type;
 
+#define CK_equal_to(type)     std::is_same_v<type, shared_ptr_t<std::decay_t<T>>>
+#define CK_base_is(type)      std::is_base_of_v<type, shared_ptr_t<std::decay_t<T>>>
+#define CK_base_of(type)      std::is_base_of_v<shared_ptr_t<std::decay_t<T>>, type>
+#define CK_basic(type)        std::is_same_v<type, std::decay_t<T>>
+
 // 一个由->set引导的update func，structure是一个shared_ptr<*>
 #define UF_set(structure, var) \
     if (!structure) structure = std::make_shared<shared_ptr_t<T>>(); \
@@ -85,36 +90,41 @@ class:当前类名
 func:一个函数名，该函数作用是把var赋值给member
 UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么可能使用UF_assign；如果member是一个vector，那么可能使用UF_append_vector
 */
-#define CL_UPDATE_FUNC(class, func, member, UPDATEFUNC) \
-    template<typename T> \
+#define CL_UPDATE_FUNC(class, func, member, UPDATEFUNC, checker, additional) \
+    template<typename T, typename CHECKER = std::enable_if_t<checker>> \
     std::shared_ptr<class> func(T& var) { \
         CALL(#class, #func); \
+        var->implicit_type(Node::VALUE_NODE); \
         UPDATEFUNC(this->member, var); \
-        return std::dynamic_pointer_cast<class>(shared_from_this()); \
+        additional; \
+        return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
     } \
-    template<typename T> \
+    template<typename T, typename CHECKER = std::enable_if_t<checker>> \
     std::shared_ptr<class> func(T&& var) { \
         CALL(#class, #func); \
-        var->type = Node::STRUCTURE_NODE; \
+        var->implicit_type(Node::UN_NODE); \
         UPDATEFUNC(this->member, var); \
-        return std::dynamic_pointer_cast<class>(shared_from_this()); \
+        additional; \
+        return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
     }
 
-// 以for-loop的形式克隆，适用于用容器存储Node的情况
-#define IF_pair_for
-// 以非loop的形式克隆，适用于持有单个Node的情况
-#define IF_no_loop
-
-#define BEGIN_IF_no_loop(type, member) \
-    do { \
-        bool by_ref = other.member.second; \
-        type* optr = other.member.first;
-#define END_IF_no_loop } while(0);
-#define BEGIN_IF_pair_for(type ,member) \
-    for (pair<type*, bool> iter : other.member) { \
-        bool by_ref = iter.second; \
-        type* optr = iter.first;
-#define END_IF_pair_for }
+#define CL_CLONE(class) \
+    shared_ptr<Node> class::clone() { \
+        CALL(#class, "clone"); \
+        Clone::get()->enter(type == STRUCTURE_NODE); \
+        struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
+        if (type == UN_NODE || type == STRUCTURE_NODE) \
+            return make_shared<class>(*this); \
+        else { \
+            if (Clone::get()->structure()) { \
+                if (Clone::get()->check(this) == nullptr) { \
+                    Clone::get()->insert(this, make_shared<class>(*this)); \
+                } \
+                return Clone::get()->check(this); \
+            } \
+            return std::dynamic_pointer_cast<Node>(shared_from_this()); \
+        } \
+    }
 
 int unknown(int code);
 
