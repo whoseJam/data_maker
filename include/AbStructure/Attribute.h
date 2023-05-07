@@ -27,7 +27,7 @@ public:
     }
     std::string get_name();
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
 
@@ -48,8 +48,7 @@ namespace mk {
                 shared_ptr_t<std::decay_t<T>>>>>
     std::shared_ptr<Attribute> attr(const std::string& name, T&& val) {
         return std::make_shared<Attribute>()
-            ->name(name)
-            ->value(std::forward<T>(val));
+            ->name(name)->value(val);
     }
 }
 

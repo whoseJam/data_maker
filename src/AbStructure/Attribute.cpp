@@ -16,6 +16,7 @@ Attribute::Attribute() {
 Attribute::Attribute(const Attribute& other) :
     Node(other) {
     CALL("Attribute", "Attribute");
+    if (!other.val) MESSAGE("Attribute", NEED("value"));
     key = other.key;
     val = other.val->clone();
 }
@@ -37,14 +38,15 @@ string Attribute::get_name() {
     return key;
 }
 
-void Attribute::generate(bool re) {
+void Attribute::generate(bool re, shared_ptr<Node> from) {
     CALL("Attribute", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
     
     if (!val) MESSAGE("Attribute", NEED("value"));
     if (key == "UNSET") MESSAGE("Attribute", NEED("name"));
-    val->generate(re);
+    val->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
 }
 
 CL_CLONE(Attribute);

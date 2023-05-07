@@ -25,7 +25,7 @@ public:
     std::shared_ptr<Attribute> get(const std::string& name);
     void set(int s, int e);
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
     
@@ -37,10 +37,7 @@ public:
     friend class Tree;
     friend class Graph;
 private:
-//  define stage;
     std::vector<std::shared_ptr<Attribute>> attrs;
-
-//  generate stage
     int start;
     int end;
 };

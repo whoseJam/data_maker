@@ -45,13 +45,14 @@ shared_ptr<Tuple> Tuple::after_generate(
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
-void Tuple::generate(bool re) {
+void Tuple::generate(bool re, shared_ptr<Node> from) {
     CALL("Tuple", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
 
     for (int i = 0; i < elements.size(); i++) {
-        elements[i]->generate(re);
+        elements[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
         if (callback_when_generating_per_element)
             callback_when_generating_per_element(
                 dynamic_pointer_cast<Tuple>(shared_from_this()), i);

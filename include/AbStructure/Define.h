@@ -94,7 +94,6 @@ UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么
     template<typename T, typename CHECKER = std::enable_if_t<checker>> \
     std::shared_ptr<class> func(T& var) { \
         CALL(#class, #func); \
-        var->implicit_type(Node::VALUE_NODE); \
         UPDATEFUNC(this->member, var); \
         additional; \
         return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
@@ -102,7 +101,6 @@ UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么
     template<typename T, typename CHECKER = std::enable_if_t<checker>> \
     std::shared_ptr<class> func(T&& var) { \
         CALL(#class, #func); \
-        var->implicit_type(Node::UN_NODE); \
         UPDATEFUNC(this->member, var); \
         additional; \
         return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
@@ -111,24 +109,19 @@ UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么
 #define CL_CLONE(class) \
     shared_ptr<Node> class::clone() { \
         CALL(#class, "clone"); \
-        Clone::get()->enter(type == STRUCTURE_NODE); \
+        Clone::get()->enter(dynamic_pointer_cast<Node>(shared_from_this())); \
         struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
-        if (type == UN_NODE || type == STRUCTURE_NODE) \
-            return make_shared<class>(*this); \
-        else { \
-            if (Clone::get()->structure()) { \
-                if (Clone::get()->check(this) == nullptr) { \
-                    Clone::get()->insert(this, make_shared<class>(*this)); \
-                } \
-                return Clone::get()->check(this); \
-            } \
-            return std::dynamic_pointer_cast<Node>(shared_from_this()); \
+        if (Clone::get()->check_stay_with(parent)) { \
+            if (!Clone::get()->check(this)) \
+                Clone::get()->insert(this, std::make_shared<class>(*this)); \
+            return Clone::get()->check(this); \
         } \
+        return std::make_shared<class>(*this); \
     }
 
 int unknown(int code);
 
 #define BUILD(project) \
-    project->generate(0); project->out();
+    project->generate(0, nullptr); project->out();
 
 #endif

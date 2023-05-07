@@ -34,7 +34,7 @@ public:
     const std::vector<int> get_adjoint(int u);
     int get_size();
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
     
@@ -59,18 +59,13 @@ private:
     static int robin_iter;
     static TreeFunPtr gen_func[4];
 
-//  define stage
     std::shared_ptr<Integer> vertex_num;
     TreeForm tf;
     std::shared_ptr<Edge> template_edge;
     std::shared_ptr<Vertex> template_vertex;
-    
-//  generate stage
     std::vector<std::vector<int>> links;
     std::vector<std::shared_ptr<Edge>> edges;
     std::vector<std::shared_ptr<Vertex>> vertices;
-
-//  output stage
     int stat;
     int cur_iter;
     bool empty_stat_called;

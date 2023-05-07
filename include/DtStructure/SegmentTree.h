@@ -5,11 +5,7 @@
 #include <vector>
 #include <functional>
 
-class Lazytag {
-};
-
-class Mergeable {
-};
+#include "Dtstructure.h"
 
 class SegmentTree {
 public:

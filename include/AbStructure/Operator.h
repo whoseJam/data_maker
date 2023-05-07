@@ -20,28 +20,24 @@ class Character;
         std::is_same_v<std::decay_t<I>, Character>, char, void>>
 
 #define LC_RC_BODY(class) \
-    virtual void generate(bool re) override { \
+    virtual void generate(bool re, std::shared_ptr<Node> from) override { \
         CALL(#class, "generate"); \
+        this->from_node = from; \
         if (this->generated && !re) return; \
         this->generated = true; \
-        lc->generate(re); \
-        rc->generate(re); \
+        lc->generate(re, std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
+        rc->generate(re, std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
     } \
     virtual std::shared_ptr<Node> clone() { \
         CALL(#class, "clone"); \
-        Clone::get()->enter(this->type == Node::STRUCTURE_NODE); \
+        Clone::get()->enter(std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
         struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
-        if (this->type == Node::UN_NODE || this->type == Node::STRUCTURE_NODE) \
-            return std::make_shared<class>(*this); \
-        else { \
-            if (Clone::get()->structure()) { \
-                if (Clone::get()->check(this) == nullptr) { \
-                    Clone::get()->insert(this, std::make_shared<class>(*this)); \
-                } \
-                return Clone::get()->check(this); \
-            } \
-            return std::dynamic_pointer_cast<Node>(this->shared_from_this()); \
+        if (Clone::get()->check_stay_with(this->parent)) { \
+            if (!Clone::get()->check(this)) \
+                Clone::get()->insert(this, std::make_shared<class>(*this)); \
+            return Clone::get()->check(this); \
         } \
+        return std::make_shared<class>(*this); \
     } \
     virtual void out() override {std::cout << get();} \
     std::shared_ptr<I> get_container() { \
@@ -94,7 +90,6 @@ public:
         if (!other.rc) MESSAGE("SubOperator<I>", NEED("rvalue"));
         this->lc = std::dynamic_pointer_cast<I>(other.lc->clone());
         this->rc = std::dynamic_pointer_cast<I>(other.rc->clone());
-        std::cout<<"copy sub operator\n";
     }
     CL_UPDATE_FUNC(SubOperator<I>, lvalue, lc, UF_assign, CK_base_is(Node), );
     CL_UPDATE_FUNC(SubOperator<I>, rvalue, rc, UF_assign, CK_base_is(Node), );

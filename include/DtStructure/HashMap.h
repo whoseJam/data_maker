@@ -4,13 +4,7 @@
 #include <map>
 #include <memory>
 
-typedef unsigned int uint;
-
-class Hashable {
-public:
-    virtual bool equal(std::shared_ptr<Hashable> other) = 0;
-    virtual uint hash_code() = 0;
-};
+#include "Dtstructure.h"
 
 class HashMap {
 public:

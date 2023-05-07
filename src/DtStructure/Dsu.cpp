@@ -52,7 +52,7 @@ void Dsu::ensure_solved() {
     CALL("Dsu", "ensure_solved");
     if (!solved) {
         solved = true;
-        tr->generate(0);
+        tr->generate(0, nullptr);
         int n = tr->get_size();
         size.resize(n);
         son.resize(n);

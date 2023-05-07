@@ -17,10 +17,14 @@ String::String(const String& other) :
     Node(other), 
     Formatable(other) {
     CALL("String", "String");
+    callback_when_generating_per_element = other.callback_when_generating_per_element;
+    callback_after_generate = other.callback_after_generate;
     if (!other.len) MESSAGE("String", NEED("length"));
     if (!other.template_char) MESSAGE("String", NEED("fill"));
     len = dynamic_pointer_cast<Integer>(other.len->clone());
     template_char = dynamic_pointer_cast<Character>(other.template_char->clone());
+    for (auto ele : other.elements)
+        elements.push_back(dynamic_pointer_cast<Character>(ele->clone()));
 }
 
 String::~String() {
@@ -58,6 +62,7 @@ shared_ptr<String> String::after_generate(
 
 int String::get_length() {
     CALL("String", "get_length");
+    if (!len) MESSAGE("String", NEED("length"));
     return len->get();
 }
 
@@ -67,19 +72,20 @@ shared_ptr<Character> String::get(int idx) {
     return elements[idx];
 }
 
-void String::generate(bool re) {
+void String::generate(bool re, shared_ptr<Node> from) {
     CALL("String", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
     
     if (!len) MESSAGE("String", NEED("length"));
     if (!template_char) MESSAGE("String", NEED("fill"));
-    len->generate(re);
+    len->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     for (int i = 1; i <= len->get(); i++)
         elements.push_back(
             dynamic_pointer_cast<Character>(template_char->clone()));
     for (int i = 0; i < elements.size(); i++) {
-        elements[i]->generate(re);
+        elements[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
         if (callback_when_generating_per_element)
             callback_when_generating_per_element(
                 dynamic_pointer_cast<String>(shared_from_this()), i);

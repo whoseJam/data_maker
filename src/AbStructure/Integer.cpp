@@ -38,16 +38,14 @@ Integer::~Integer() {
 shared_ptr<Integer> Integer::lower_bound(int x) {
     CALL("Integer", "lower_bound");
     if (!l) l = make_shared<Integer>();
-    l->set(x);
-    status = BY_LR;
+    l->set(x); status = BY_LR;
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
 shared_ptr<Integer> Integer::upper_bound(int x) {
     CALL("Integer", "upper_bound");
     if (!r) r = make_shared<Integer>();
-    r->set(x);
-    status = BY_LR;
+    r->set(x); status = BY_LR;
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
@@ -79,32 +77,33 @@ shared_ptr<Integer> Integer::get_upper_bound() {
 
 shared_ptr<Integer> Integer::set(int x) {
     CALL("Integer", "set");
-    int_val = x;
-    status = BY_SET_VAL;
+    int_val = x; status = BY_SET_VAL;
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
-void Integer::generate(bool re) {
+void Integer::generate(bool re, shared_ptr<Node> from) {
     CALL("Integer", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
     
     if (status == BY_SET_PTR) {
         if (l) MESSAGE("Integer", CONFLICT("set", "lower_bound"));
         if (r) MESSAGE("Integer", CONFLICT("set", "upper_bound"));
-        ptr_val->generate(re);
+        ptr_val->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     } else if (status == BY_SET_VAL) {
         if (l) MESSAGE("Integer", CONFLICT("set", "lower_bound"));
         if (r) MESSAGE("Integer", CONFLICT("set", "upper_bound"));
     } else if (status == BY_LR){
         if (!l) MESSAGE("Integer", NEED("lower_bound"));
         if (!r) MESSAGE("Integer", NEED("upper_bound"));
-        l->generate(re); r->generate(re);
+        l->generate(re, dynamic_pointer_cast<Node>(shared_from_this())); 
+        r->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
         if (l->get() > r->get()) MESSAGE("Integer", ENSURE("l < r"));
         int_val = rand_int(l->get(), r->get());
     } else if (status == BY_OP) {
-        if (!op) MESSAGE("Integer", NEED("operator"));
-        op->generate(re);
+        if (!op) MESSAGE("Integer", NEED("calculate"));
+        op->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     } else {
         MESSAGE("Integer", NEED("any initialize"));
     }

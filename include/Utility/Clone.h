@@ -10,18 +10,18 @@
 class Clone {
 public:
     static Clone* get();
-    void enter(bool flag);
+    void enter(std::shared_ptr<Node> ptr);
     void exit();
-    bool structure();
-    void insert(void* ptr, std::shared_ptr<Node> val);
+    bool check_stay_with(void* ptr);
     std::shared_ptr<Node> check(void* ptr);
+    void insert(void*, std::shared_ptr<Node> ptr);
 private:
     Clone();
     
     static Clone instance;
-    std::list<bool> has_structure;
     std::map<void*, std::shared_ptr<Node>> helper;
-    int cnt;
+    std::map<void*, int> cnt;
+    std::list<void*> stack;
 };
 
 #endif

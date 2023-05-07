@@ -5,45 +5,23 @@
 
 class Node {
 public:
-    enum {
-        UN_NODE,
-        VALUE_NODE,
-        STRUCTURE_NODE
-    };
-public:
     Node();
     Node(const Node& other);
     virtual ~Node();
-    virtual void generate(bool re) = 0;
+    virtual void generate(bool re, std::shared_ptr<Node> from) = 0;
     virtual std::shared_ptr<Node> clone() = 0;
     virtual void out() = 0;
-    int type;
+
+    template<typename T>
+    std::shared_ptr<T> from() {
+        return std::dynamic_pointer_cast<T>(from_node);
+    }
+
+    void live_with(std::shared_ptr<Node> prt);
 public:
-    void implicit_type(int type);
-    void explicit_type(int type);
-    bool explicit_flag;
-public:
+    std::shared_ptr<Node> from_node;
     bool generated;
+    void* parent;
 };
-
-namespace mk {
-    template<typename T>
-    T structure(T&& ele) {
-        ele->explicit_type(Node::STRUCTURE_NODE);
-        return ele;
-    }
-
-    template<typename T>
-    T value(T&& ele) {
-        ele->explicit_type(Node::VALUE_NODE);
-        return ele;
-    }
-
-    template<typename T>
-    T un(T&& ele) {
-        ele->explicit_type(Node::UN_NODE);
-        return ele;
-    }
-}
 
 #endif

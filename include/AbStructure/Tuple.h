@@ -35,7 +35,7 @@ public:
         return ans;
     }
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
 

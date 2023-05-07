@@ -28,10 +28,19 @@ Tree::Tree(const Tree& other) :
     Node(other), 
     Formatable(other) {
     CALL("Tree", "Tree");
+    if (!other.vertex_num) MESSAGE("Tree", NEED("size"));
+    if (!other.template_edge) MESSAGE("Tree", NEED("edge"));
+    if (!other.template_vertex) MESSAGE("Tree", NEED("vertex"));
+
     vertex_num = other.vertex_num;
     tf = other.tf;
     template_edge = dynamic_pointer_cast<Edge>(other.template_edge->clone());
     template_vertex = dynamic_pointer_cast<Vertex>(other.template_vertex->clone());
+    links = other.links;
+    for (auto edge : other.edges)
+        edges.push_back(dynamic_pointer_cast<Edge>(edge->clone()));
+    for (auto vertex : other.vertices)
+        vertices.push_back(dynamic_pointer_cast<Vertex>(vertex->clone()));
     fmt = other.fmt;
 }
 
@@ -67,16 +76,17 @@ int Tree::get_size() {
     return vertex_num->get();
 }
 
-void Tree::generate(bool re) {
+void Tree::generate(bool re, shared_ptr<Node> from) {
     CALL("Tree", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
 
     if (!template_vertex) MESSAGE("Tree", NEED("vertex"));
-    if (!template_edge)   MESSAGE("Tree", NEED("edge"));
-    if (!vertex_num)      MESSAGE("Tree", NEED("size"));
+    if (!template_edge) MESSAGE("Tree", NEED("edge"));
+    if (!vertex_num) MESSAGE("Tree", NEED("size"));
     
-    vertex_num->generate(re);
+    vertex_num->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     links.resize(vertex_num->get());
     for (int i = 1; i <= vertex_num->get(); i++) {
         shared_ptr<Vertex> ver = dynamic_pointer_cast<Vertex>(template_vertex->clone());
@@ -90,9 +100,9 @@ void Tree::generate(bool re) {
         robin_iter %= 4;
     }
     for (int i = 0; i < vertices.size(); i++)
-        vertices[i]->generate(re);
+        vertices[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     for (int i = 0; i < edges.size(); i++)
-        edges[i]->generate(re);
+        edges[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
 }
 
 CL_CLONE(Tree);

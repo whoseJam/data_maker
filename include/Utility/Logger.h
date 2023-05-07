@@ -42,6 +42,7 @@ Description:
 #define TYPE_ERROR "type error"
 
 #define INDEX_OUT_OF_BOUNDARY "index out of boundary"
+#define INVALID_VERSION(ver) ver << " is a invalid version"
 
 #define UNEXCEPT __FILE__ << __LINE__ << "unexcept"
 

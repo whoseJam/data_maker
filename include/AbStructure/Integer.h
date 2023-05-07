@@ -30,7 +30,7 @@ public:
     std::shared_ptr<Integer> set(int value);
     CL_UPDATE_FUNC(Integer, set, ptr_val, UF_assign, CK_equal_to(Integer), status = BY_SET_PTR);
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
     
@@ -39,14 +39,12 @@ public:
 
     virtual void parse(const std::string& spec, int n, ...) override;
 public:
-//  define stage
     std::shared_ptr<Integer> l;
     std::shared_ptr<Integer> r;
     std::shared_ptr<Operator<Integer>> op;
     int status;
     enum {EMPTY, BY_LR, BY_OP, BY_SET_PTR, BY_SET_VAL};
 
-//  generate stage
     int int_val;
     std::shared_ptr<Integer> ptr_val;
 };
@@ -66,11 +64,9 @@ namespace mk {
                 Integer,
                 shared_ptr_t<std::decay_t<V>>>)>>
     std::shared_ptr<Integer> integer(T&& l, V&& r) {
-        auto l_move = l;
-        auto r_move = r;
         return std::make_shared<Integer>()
-            ->lower_bound(std::forward<T>(l_move))
-            ->upper_bound(std::forward<V>(r_move));
+            ->lower_bound(l)
+            ->upper_bound(r);
     }
 }
 

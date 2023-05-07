@@ -56,13 +56,14 @@ void Vertex::set(int idx) {
     this->idx = idx;
 }
 
-void Vertex::generate(bool re) {
+void Vertex::generate(bool re, shared_ptr<Node> from) {
     CALL("Vertex", "generate");
+    from_node = from;
     if (generated) return;
     generated = true;
 
     for (int i = 0; i < attrs.size(); i++)
-        attrs[i]->generate(re);
+        attrs[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
 }
 
 CL_CLONE(Vertex);

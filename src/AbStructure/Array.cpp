@@ -17,10 +17,14 @@ Array::Array(const Array& other) :
     Node(other), 
     Formatable(other) {
     CALL("Array", "Array");
+    callback_when_generating_per_element = other.callback_when_generating_per_element;
+    callback_after_generate = other.callback_after_generate;
     if (!other.len) MESSAGE("Array", NEED("length"));
     if (!other.template_ele) MESSAGE("Array", NEED("fill"));
     len = dynamic_pointer_cast<Integer>(other.len->clone());
     template_ele = other.template_ele->clone();
+    for (auto ele : other.elements) 
+        elements.push_back(ele->clone());
 }
 
 Array::~Array() {
@@ -58,21 +62,23 @@ shared_ptr<Array> Array::after_generate(
 
 int Array::get_length() {
     CALL("Array", "get_length");
+    if (!len) MESSAGE("Array", NEED("length"));
     return len->get();
 }
 
-void Array::generate(bool re) {
+void Array::generate(bool re, std::shared_ptr<Node> from) {
     CALL("Array", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
     
     if (!len) MESSAGE("Array", NEED("length"));
     if (!template_ele) MESSAGE("Array", NEED("fill"));
-    len->generate(re);
+    len->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     for (int i = 1; i <= len->get(); i++)
         elements.push_back(template_ele->clone());
     for (int i = 0; i < elements.size(); i++) {
-        elements[i]->generate(re);
+        elements[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
         if (callback_when_generating_per_element)
             callback_when_generating_per_element(
                 dynamic_pointer_cast<Array>(shared_from_this()), i);

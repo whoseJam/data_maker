@@ -39,7 +39,7 @@ public:
         return ans;
     }
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
 
@@ -53,18 +53,11 @@ public:
 
     virtual void parse(const std::string& spec, int n, ...);
 private:
-//  callback
     std::function<void(std::shared_ptr<Array>, int)> callback_when_generating_per_element;
     std::function<void(std::shared_ptr<Array>)> callback_after_generate;
-
-//  define stage
     std::shared_ptr<Integer> len;
     std::shared_ptr<Node> template_ele;
-    
-//  generate stage
     std::vector<std::shared_ptr<Node>> elements;
-
-//  output stage
     int cur_iter;
 };
 
@@ -78,8 +71,7 @@ namespace mk {
                 Integer,
                 shared_ptr_t<std::decay_t<T>>>>>
     std::shared_ptr<Array> array(T&& n) {
-        auto n_move = n;
-        return array()->length(std::forward<T>(n_move));
+        return array()->length(n);
     }
 
     template<typename T, typename E, typename CHECKER = 
@@ -92,9 +84,7 @@ namespace mk {
                 Node,
                 shared_ptr_t<std::decay_t<E>>>>>
     std::shared_ptr<Array> array(T&& n, E&& e) {
-        auto n_move = n;
-        auto e_move = e;
-        return array(std::forward<T>(n_move))->fill(std::forward<E>(e_move));
+        return array(n)->fill(e);
     }
 }
 

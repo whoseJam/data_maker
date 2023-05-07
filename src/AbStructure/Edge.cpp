@@ -24,6 +24,8 @@ Edge::Edge(const Edge& other) :
         attrs.push_back(
             dynamic_pointer_cast<Attribute>(
                 other.attrs[i]->clone()));
+    start = other.start;
+    end = other.end;
     fmt = other.fmt;
 }
 
@@ -56,13 +58,14 @@ void Edge::set(int s, int e) {
     end = e;
 }
 
-void Edge::generate(bool re) {
+void Edge::generate(bool re, shared_ptr<Node> from) {
     CALL("Edge", "generate");
+    from_node = from;
     if (generated && !re) return;
     generated = true;
     
     for (int i = 0; i < attrs.size(); i++) {
-        attrs[i]->generate(re);
+        attrs[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
     }
 }
 

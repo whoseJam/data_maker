@@ -12,16 +12,13 @@ using namespace std;
 Node::Node() {
     CALL("Node", "Node");
     generated = false;
-    type = UN_NODE;
-    explicit_flag = false;
+    parent = nullptr;
 }
 
 Node::Node(const Node& other) {
     CALL("Node", "Node");
-    // if (other.generated) MESSAGE("Node", ENSURE("other should never be generated"));
     generated = other.generated;
-    type = other.type;
-    explicit_flag = other.explicit_flag;
+    parent = other.parent;
 }
 
 Node::~Node() {
@@ -30,15 +27,6 @@ Node::~Node() {
 #endif
 }
 
-void Node::implicit_type(int type) {
-    if (!explicit_flag) this->type = type;
-}
-
-void Node::explicit_type(int type) {
-    if (!explicit_flag) {
-        this->type = type;
-        explicit_flag = true;
-    } else if (this->type != type) {
-        MESSAGE("Node", "multi explicit type is set");
-    }
+void Node::live_with(shared_ptr<Node> prt) {
+    parent = prt.get();
 }

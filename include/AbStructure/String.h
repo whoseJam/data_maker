@@ -33,7 +33,7 @@ public:
     int get_length();
     std::shared_ptr<Character> get(int idx);
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
 
@@ -47,18 +47,11 @@ public:
 
     virtual void parse(const std::string& spec, int n, ...);
 private:
-//  callback
     std::function<void(std::shared_ptr<String>, int)> callback_when_generating_per_element;
     std::function<void(std::shared_ptr<String>)> callback_after_generate;
-
-//  define stage
     std::shared_ptr<Integer> len;
     std::shared_ptr<Character> template_char;
-    
-//  generate stage
     std::vector<std::shared_ptr<Character>> elements;
-
-//  output stage
     int cur_iter;
 };
 

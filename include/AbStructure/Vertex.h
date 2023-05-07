@@ -25,7 +25,7 @@ public:
     std::shared_ptr<Attribute> get(const std::string& name);
     void set(int idx);
 
-    virtual void generate(bool re) override;
+    virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
     virtual void out() override;
     
