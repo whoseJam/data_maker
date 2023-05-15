@@ -110,12 +110,6 @@ void Character::generate(bool re, shared_ptr<Node> from) {
 
 CL_CLONE(Character);
 
-void Character::out() {
-    CALL("Character", "out");
-    Formatable::parse(
-        shared_from_this(), fmt, "Character");
-}
-
 bool Character::equal(shared_ptr<Hashable> o) {
     CALL("Character", "equal");
     shared_ptr<Character> other = dynamic_pointer_cast<Character>(o);
@@ -141,6 +135,12 @@ void Character::parse(const string& spec, int n, ...) {
             MESSAGE("Character", FUNC_NOT_FOUND(spec));
         }
     }
+}
+
+void Character::out() {
+    CALL("Character", "out");
+    Formatable::parse(
+        shared_from_this(), fmt, "Character");
 }
 
 namespace mk {

@@ -64,11 +64,6 @@ void Tuple::generate(bool re, shared_ptr<Node> from) {
 
 CL_CLONE(Tuple);
 
-void Tuple::out() {
-    CALL("Tuple", "out");
-    Formatable::parse(shared_from_this(), fmt, "Tuple");
-}
-
 bool Tuple::equal(shared_ptr<Hashable> o) {
     CALL("Tuple", "equal");
     shared_ptr<Tuple> other = dynamic_pointer_cast<Tuple>(o);
@@ -121,10 +116,17 @@ void Tuple::parse(const string& spec, int n, ...) {
         va_start(valist, n);
         if (spec == SPEC_SELF) {
             if (!IN_RANGE(0, n, 0)) MESSAGE("Tuple", FUNC_ARGS_MISMATCH(n, 0, 0));
-            elements[cur_iter]->out();
+            auto ele = dynamic_pointer_cast<Formatable>(elements[cur_iter]);
+            if (!ele) MESSAGE("Tuple", UNABLE("Formatable"));
+            ele->out();
         } else {
             MESSAGE("Tuple", FUNC_NOT_FOUND(spec));
         }
         va_end(valist);
     }
+}
+
+void Tuple::out() {
+    CALL("Tuple", "out");
+    Formatable::parse(shared_from_this(), fmt, "Tuple");
 }

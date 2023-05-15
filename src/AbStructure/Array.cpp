@@ -40,6 +40,18 @@ shared_ptr<Array> Array::length(int len) {
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
+shared_ptr<Array> Array::length(shared_ptr<Integer> len) {
+    CALL("Array", "length");
+    this->len = len;
+    return dynamic_pointer_cast<Array>(shared_from_this());
+}
+
+shared_ptr<Array> Array::fill(shared_ptr<Node> ele) {
+    CALL("Array", "fill");
+    this->template_ele = ele;
+    return dynamic_pointer_cast<Array>(shared_from_this());
+}
+
 shared_ptr<Array> Array::format(const string& fmt) {
     CALL("Array", "format");
     this->fmt = fmt;
@@ -89,12 +101,6 @@ void Array::generate(bool re, std::shared_ptr<Node> from) {
 }
 
 CL_CLONE(Array);
-
-void Array::out() {
-    CALL("Array", "out");
-    Formatable::parse(
-        enable_shared_from_this<Formatable>::shared_from_this(), fmt, "Array");
-}
 
 bool Array::equal(shared_ptr<Hashable> o) {
     CALL("Array", "equal");
@@ -147,12 +153,19 @@ void Array::parse(const string& spec, int n, ...) {
         va_start(valist, n);
         if (spec == SPEC_SELF) {
             if (!IN_RANGE(0, n, 0)) MESSAGE("Array", FUNC_ARGS_MISMATCH(n, 0, 0));
-            elements[cur_iter]->out();
+            auto ele = get<Formatable>(cur_iter);
+            if (!ele) MESSAGE("Array", UNABLE("Formatable"));
+            ele->out();
         } else {
             MESSAGE("Array", FUNC_NOT_FOUND(spec));
         }
         va_end(valist);
     }
+}
+
+void Array::out() {
+    CALL("Array", "out");
+    Formatable::parse(shared_from_this(), fmt, "Array");
 }
 
 namespace mk {

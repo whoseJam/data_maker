@@ -40,4 +40,14 @@ public:
     virtual uint hash_code() = 0;
 };
 
+class Comparable {
+public:
+    Comparable() = default;
+    virtual ~Comparable() = default;
+    virtual int compare_to(std::shared_ptr<Comparable>) = 0;
+};
+
+#define PUSHUP(x) MergeableHelper<T>().push_up(x)
+#define PUSHDOWN(x) LazytagHelper<T>().push_down(x)
+
 #endif

@@ -43,7 +43,9 @@ Description:
 
 #define INDEX_OUT_OF_BOUNDARY "index out of boundary"
 #define INVALID_VERSION(ver) ver << " is a invalid version"
+#define UNABLE(ability) "is not " << ability
 
-#define UNEXCEPT __FILE__ << __LINE__ << "unexcept"
+#define UNEXCEPT __FILE__ << " " << __LINE__ << " unknown error happend"
+#define UNKNOWN UNEXCEPT
 
 #endif

@@ -10,7 +10,6 @@ public:
     virtual ~Node();
     virtual void generate(bool re, std::shared_ptr<Node> from) = 0;
     virtual std::shared_ptr<Node> clone() = 0;
-    virtual void out() = 0;
 
     template<typename T>
     std::shared_ptr<T> from() {

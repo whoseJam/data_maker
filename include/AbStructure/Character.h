@@ -29,12 +29,12 @@ public:
 
     virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
-    virtual void out() override;
     
     virtual bool equal(std::shared_ptr<Hashable> other) override;
     virtual uint hash_code() override;
 
     virtual void parse(const std::string& spec, int n, ...) override;
+    virtual void out() override;
 private:
     std::shared_ptr<Character> l;
     std::shared_ptr<Character> r;

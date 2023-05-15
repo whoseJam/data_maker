@@ -13,7 +13,7 @@
 class Attribute : 
     public Node,
     public Hashable,
-    public std::enable_shared_from_this<Attribute> {
+    public Formatable {
 public:
     Attribute();
     Attribute(const Attribute& other);
@@ -29,10 +29,12 @@ public:
 
     virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
-    virtual void out() override;
 
     virtual bool equal(std::shared_ptr<Hashable> other) override;
     virtual uint hash_code() override;
+
+    virtual void parse(const std::string& spec, int n, ...);
+    virtual void out() override;
 private:
     std::shared_ptr<Node> val;
     std::string key;

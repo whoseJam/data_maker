@@ -23,8 +23,8 @@ public:
     Array(const Array& other);
     virtual ~Array();
     std::shared_ptr<Array> length(int len);
-    CL_UPDATE_FUNC(Array, length, len, UF_assign, CK_equal_to(Integer), );
-    CL_UPDATE_FUNC(Array, fill, template_ele, UF_assign, CK_base_is(Node), );
+    std::shared_ptr<Array> length(std::shared_ptr<Integer> len);
+    std::shared_ptr<Array> fill(std::shared_ptr<Node> ele);
     std::shared_ptr<Array> format(const std::string& fmt);
     std::shared_ptr<Array> when_generating_per_element(std::function<void(std::shared_ptr<Array>, int)>);
     std::shared_ptr<Array> after_generate(std::function<void(std::shared_ptr<Array>)>);
@@ -41,7 +41,6 @@ public:
 
     virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
-    virtual void out() override;
 
     virtual bool equal(std::shared_ptr<Hashable> other);
     virtual uint hash_code();
@@ -51,7 +50,8 @@ public:
     virtual bool iter_loop_finish() override;
     virtual bool iter_at_last() override;
 
-    virtual void parse(const std::string& spec, int n, ...);
+    virtual void parse(const std::string& spec, int n, ...) override;
+    virtual void out() override;
 private:
     std::function<void(std::shared_ptr<Array>, int)> callback_when_generating_per_element;
     std::function<void(std::shared_ptr<Array>)> callback_after_generate;

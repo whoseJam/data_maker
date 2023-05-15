@@ -51,11 +51,6 @@ void Attribute::generate(bool re, shared_ptr<Node> from) {
 
 CL_CLONE(Attribute);
 
-void Attribute::out() {
-    CALL("Attribute", "out");
-    val->out();
-}
-
 bool Attribute::equal(shared_ptr<Hashable> o) {
     CALL("Attribute", "equal");
     shared_ptr<Attribute> other = dynamic_pointer_cast<Attribute>(o);
@@ -71,6 +66,15 @@ uint Attribute::hash_code() {
     shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(val);
     if (!a) MESSAGE("Attribute", UNEXCEPT);
     return a->hash_code();
+}
+
+void Attribute::parse(const string& spec, int n, ...) {
+    
+}
+
+void Attribute::out() {
+    CALL("Attribute", "out");
+    dynamic_pointer_cast<Formatable>(val)->out();
 }
 
 namespace mk {

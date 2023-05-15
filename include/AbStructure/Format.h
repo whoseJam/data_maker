@@ -20,6 +20,7 @@ public:
     Formatable(const Formatable& other);
     virtual void parse(const std::string& spec, int n, ...);
     static void parse(std::shared_ptr<Formatable> obj, const std::string& fmt, const std::string& cls);
+    virtual void out() = 0;
 protected:
     std::string fmt;
 };
