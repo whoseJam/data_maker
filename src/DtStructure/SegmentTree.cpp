@@ -1,7 +1,7 @@
 
-#include "SegmentTree.h"
+// #include "SegmentTree.h"
 
-namespace mk {
-int SEGMENT_L;
-int SEGMENT_R;
-}
+// namespace mk {
+// int SEGMENT_L;
+// int SEGMENT_R;
+// }

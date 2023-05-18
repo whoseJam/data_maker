@@ -44,6 +44,8 @@ Description:
 #define INDEX_OUT_OF_BOUNDARY "index out of boundary"
 #define INVALID_VERSION(ver) ver << " is a invalid version"
 #define UNABLE(ability) "is not " << ability
+#define SPLAY_HANDLE_NOT_FOUND "splay handle not found"
+#define VERTEX_NOT_FOUND "vertex not found"
 
 #define UNEXCEPT __FILE__ << " " << __LINE__ << " unknown error happend"
 #define UNKNOWN UNEXCEPT

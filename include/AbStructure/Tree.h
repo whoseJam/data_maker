@@ -24,15 +24,15 @@ public:
     Tree(const Tree& other);
     std::shared_ptr<Tree> size(int num);
     CL_UPDATE_FUNC(Tree, size, vertex_num, UF_set, CK_equal_to(Integer), );
-    std::shared_ptr<Tree> tree_form(TreeForm tf);
+    auto tree_form(TreeForm tf) -> std::shared_ptr<Tree>;
     CL_UPDATE_FUNC(Tree, edge, template_edge, UF_assign, CK_equal_to(Edge), );
     CL_UPDATE_FUNC(Tree, vertex, template_vertex, UF_assign, CK_equal_to(Vertex), );
-    std::shared_ptr<Tree> format(const std::string& fmt);
+    auto format(const std::string& fmt) -> std::shared_ptr<Tree>;
     
-    std::shared_ptr<Vertex> get(int u);
-    std::shared_ptr<Edge> get(int f, int s);
-    const std::vector<int> get_adjoint(int u);
-    int get_size();
+    auto vertex(int u) -> std::shared_ptr<Vertex>;
+    auto vertex_set() -> std::vector<std::shared_ptr<Vertex>>&;
+    auto edge_set() -> std::vector<std::shared_ptr<Edge>>&;
+    auto size() -> int;
 
     virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
@@ -63,7 +63,6 @@ private:
     TreeForm tf;
     std::shared_ptr<Edge> template_edge;
     std::shared_ptr<Vertex> template_vertex;
-    std::vector<std::vector<int>> links;
     std::vector<std::shared_ptr<Edge>> edges;
     std::vector<std::shared_ptr<Vertex>> vertices;
     int stat;

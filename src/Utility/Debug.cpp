@@ -5,8 +5,8 @@
 
 using namespace std;
 
-Call::Call(const string& cls, const string& fun) {
-    CallStack::get()->enter(cls, fun);
+Call::Call(const string& fun) {
+    CallStack::get()->enter("empty", fun);
 }
 
 Call::~Call() {

@@ -18,21 +18,21 @@ Option::Option(const Option& other) :
 }
 
 shared_ptr<Option> Option::add_option(shared_ptr<Node> opt, int x) {
-    CALL("Option", "add_option");
+    CALL(FUNCTION);
     opts.push_back(opt);
     robin.push_back(mk::integer(x));
     return dynamic_pointer_cast<Option>(shared_from_this());
 }
 
 shared_ptr<Option> Option::add_option(shared_ptr<Node> opt, shared_ptr<Integer> x) {
-    CALL("Option", "add_option");
+    CALL(FUNCTION);
     opts.push_back(opt);
     robin.push_back(x);
     return dynamic_pointer_cast<Option>(shared_from_this());
 }
 
 void Option::generate(bool re, shared_ptr<Node> from) {
-    CALL("Option", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -46,7 +46,7 @@ void Option::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Option);
 
 void Option::parse(const string& spec, int n, ...) {
-    CALL("Option", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {
@@ -65,6 +65,12 @@ void Option::parse(const string& spec, int n, ...) {
 }
 
 void Option::out() {
-    CALL("Option", "out");
+    CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Option");
+}
+
+namespace mk {
+    shared_ptr<Option> option() {
+        return make_shared<Option>();
+    }
 }

@@ -9,13 +9,13 @@
 using namespace std;
 
 Attribute::Attribute() {
-    CALL("Attribute", "Attribute");
+    CALL(FUNCTION);
     key = "UNSET";
 }
 
 Attribute::Attribute(const Attribute& other) :
     Node(other) {
-    CALL("Attribute", "Attribute");
+    CALL(FUNCTION);
     if (!other.val) MESSAGE("Attribute", NEED("value"));
     key = other.key;
     val = other.val->clone();
@@ -28,18 +28,18 @@ Attribute::~Attribute() {
 }
 
 shared_ptr<Attribute> Attribute::name(const std::string& name) {
-    CALL("Attribute", "name");
+    CALL(FUNCTION);
     key = name;
     return dynamic_pointer_cast<Attribute>(shared_from_this());
 }
 
 string Attribute::get_name() {
-    CALL("Attribute", "get_name");
+    CALL(FUNCTION);
     return key;
 }
 
 void Attribute::generate(bool re, shared_ptr<Node> from) {
-    CALL("Attribute", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -52,7 +52,7 @@ void Attribute::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Attribute);
 
 bool Attribute::equal(shared_ptr<Hashable> o) {
-    CALL("Attribute", "equal");
+    CALL(FUNCTION);
     shared_ptr<Attribute> other = dynamic_pointer_cast<Attribute>(o);
     if (!other) return false;
     shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(val);
@@ -62,7 +62,7 @@ bool Attribute::equal(shared_ptr<Hashable> o) {
 }
 
 uint Attribute::hash_code() {
-    CALL("Attribute", "hash_code");
+    CALL(FUNCTION);
     shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(val);
     if (!a) MESSAGE("Attribute", UNEXCEPT);
     return a->hash_code();
@@ -73,7 +73,7 @@ void Attribute::parse(const string& spec, int n, ...) {
 }
 
 void Attribute::out() {
-    CALL("Attribute", "out");
+    CALL(FUNCTION);
     dynamic_pointer_cast<Formatable>(val)->out();
 }
 

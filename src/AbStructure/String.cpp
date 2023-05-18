@@ -9,14 +9,14 @@
 using namespace std;
 
 String::String() {
-    CALL("String", "String");
+    CALL(FUNCTION);
     fmt = "$x";
 }
 
 String::String(const String& other) :
     Node(other), 
     Formatable(other) {
-    CALL("String", "String");
+    CALL(FUNCTION);
     callback_when_generating_per_element = other.callback_when_generating_per_element;
     callback_after_generate = other.callback_after_generate;
     if (!other.len) MESSAGE("String", NEED("length"));
@@ -34,46 +34,46 @@ String::~String() {
 }
 
 shared_ptr<String> String::length(int len) {
-    CALL("String", "length");
+    CALL(FUNCTION);
     if (!this->len) this->len = make_shared<Integer>();
     this->len->set(len);
     return dynamic_pointer_cast<String>(shared_from_this());
 }
 
 shared_ptr<String> String::format(const string& fmt) {
-    CALL("String", "format");
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<String>(shared_from_this());
 }
 
 shared_ptr<String> String::when_generating_per_element(
     function<void(shared_ptr<String>, int)> callback) {
-    CALL("String", "when_generating_per_element");
+    CALL(FUNCTION);
     callback_when_generating_per_element = callback;
     return dynamic_pointer_cast<String>(shared_from_this());
 }
 
 shared_ptr<String> String::after_generate(
     function<void(shared_ptr<String>)> callback) {
-    CALL("Array", "after_generate");
+    CALL(FUNCTION);
     callback_after_generate = callback;
     return dynamic_pointer_cast<String>(shared_from_this());
 }
 
 int String::get_length() {
-    CALL("String", "get_length");
+    CALL(FUNCTION);
     if (!len) MESSAGE("String", NEED("length"));
     return len->get();
 }
 
 shared_ptr<Character> String::get(int idx) {
-    CALL("String", "get");
+    CALL(FUNCTION);
     if (idx < 0 || idx >= len->get()) MESSAGE("String", INDEX_OUT_OF_BOUNDARY);
     return elements[idx];
 }
 
 void String::generate(bool re, shared_ptr<Node> from) {
-    CALL("String", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -98,13 +98,13 @@ void String::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(String);
 
 void String::out() {
-    CALL("String", "out");
+    CALL(FUNCTION);
     Formatable::parse(
         enable_shared_from_this<Formatable>::shared_from_this(), fmt, "String");
 }
 
 bool String::equal(shared_ptr<Hashable> o) {
-    CALL("String", "equal");
+    CALL(FUNCTION);
     shared_ptr<String> other = dynamic_pointer_cast<String>(o);
     if (!other) return false;
     if (!len->equal(other->len)) return false;
@@ -116,7 +116,7 @@ bool String::equal(shared_ptr<Hashable> o) {
 }
 
 uint String::hash_code() {
-    CALL("String", "hash_code");
+    CALL(FUNCTION);
     uint ans = len->get();
     for (int i = 0; i < elements.size(); i++) {
         shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
@@ -126,27 +126,27 @@ uint String::hash_code() {
 }
 
 void String::iter_reset() {
-    CALL("String", "iter_reset");
+    CALL(FUNCTION);
     cur_iter = 0;
 }
 
 void String::iter_next() {
-    CALL("String", "iter_next");
+    CALL(FUNCTION);
     cur_iter++;
 }
 
 bool String::iter_loop_finish() {
-    CALL("String", "iter_loop_finish");
+    CALL(FUNCTION);
     return cur_iter >= elements.size();
 }
 
 bool String::iter_at_last() {
-    CALL("String", "iter_at_last");
+    CALL(FUNCTION);
     return cur_iter == elements.size() - 1;
 }
 
 void String::parse(const string& spec, int n, ...) {
-    CALL("String", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {

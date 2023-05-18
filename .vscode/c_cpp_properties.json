@@ -8,6 +8,7 @@
                 "/home/hsj/data/include/DtStructure",
                 "/home/hsj/data/include",
                 "/home/hsj/data/src/DtStructure",
+                "/usr/local/include/gtest",
                 "/usr/include/c++/11",
                 "/usr/include/x86_64-linux-gnu/c++/11",
                 "/usr/include/c++/11/backward",

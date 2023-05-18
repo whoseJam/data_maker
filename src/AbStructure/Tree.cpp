@@ -20,23 +20,22 @@ TreeFunPtr Tree::gen_func[4] = {
 }; 
 
 Tree::Tree() {
-    CALL("Tree", "Tree");
+    CALL(FUNCTION);
     tf = RANDOM_TREE;
 }
 
 Tree::Tree(const Tree& other) :
     Node(other), 
     Formatable(other) {
-    CALL("Tree", "Tree");
+    CALL(FUNCTION);
     if (!other.vertex_num) MESSAGE("Tree", NEED("size"));
     if (!other.template_edge) MESSAGE("Tree", NEED("edge"));
     if (!other.template_vertex) MESSAGE("Tree", NEED("vertex"));
 
-    vertex_num = other.vertex_num;
+    vertex_num = dynamic_pointer_cast<Integer>(other.vertex_num->clone());
     tf = other.tf;
     template_edge = dynamic_pointer_cast<Edge>(other.template_edge->clone());
     template_vertex = dynamic_pointer_cast<Vertex>(other.template_vertex->clone());
-    links = other.links;
     for (auto edge : other.edges)
         edges.push_back(dynamic_pointer_cast<Edge>(edge->clone()));
     for (auto vertex : other.vertices)
@@ -45,39 +44,43 @@ Tree::Tree(const Tree& other) :
 }
 
 shared_ptr<Tree> Tree::size(int num) {
-    CALL("Tree", "size");
+    CALL(FUNCTION);
     if (!vertex_num) vertex_num = make_shared<Integer>();
     vertex_num->set(num);
     return dynamic_pointer_cast<Tree>(shared_from_this());
 }
 
-shared_ptr<Tree> Tree::tree_form(TreeForm tf) {
-    CALL("Tree", "tree_form");
+auto Tree::tree_form(TreeForm tf) -> shared_ptr<Tree> {
+    CALL(FUNCTION);
     this->tf = tf;
     return dynamic_pointer_cast<Tree>(shared_from_this());
 }
 
-shared_ptr<Tree> Tree::format(const string& fmt) {
-    CALL("Tree", "format");
+auto Tree::format(const string& fmt) -> shared_ptr<Tree> {
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Tree>(shared_from_this());
 }
 
-shared_ptr<Vertex> Tree::get(int u) {
+auto Tree::vertex(int u) -> std::shared_ptr<Vertex> {
     if (u < 0 || u > vertices.size()) MESSAGE("Tree", INDEX_OUT_OF_BOUNDARY);
     return vertices[u];
 }
 
-const vector<int> Tree::get_adjoint(int u) {
-    return links[u];
+auto Tree::vertex_set() -> vector<shared_ptr<Vertex>>& {
+    return vertices;
 }
 
-int Tree::get_size() {
+auto Tree::edge_set() -> vector<shared_ptr<Edge>>& {
+    return edges;
+}
+
+auto Tree::size() -> int {
     return vertex_num->get();
 }
 
 void Tree::generate(bool re, shared_ptr<Node> from) {
-    CALL("Tree", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -87,7 +90,6 @@ void Tree::generate(bool re, shared_ptr<Node> from) {
     if (!vertex_num) MESSAGE("Tree", NEED("size"));
     
     vertex_num->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
-    links.resize(vertex_num->get());
     for (int i = 1; i <= vertex_num->get(); i++) {
         shared_ptr<Vertex> ver = dynamic_pointer_cast<Vertex>(template_vertex->clone());
         ver->set(i);
@@ -108,7 +110,7 @@ void Tree::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Tree);
 
 void Tree::out() {
-    CALL("Tree", "out");
+    CALL(FUNCTION);
     stat = EMPTY_STATUS;
     empty_stat_called = false;
     Formatable::parse(
@@ -116,7 +118,7 @@ void Tree::out() {
 }
 
 bool Tree::equal(shared_ptr<Hashable> o) {
-    CALL("Tree", "equal");
+    CALL(FUNCTION);
     shared_ptr<Tree> other = dynamic_pointer_cast<Tree>(o);
     if (other == nullptr) return false;
     if (!vertex_num->equal(other->vertex_num)) return false;
@@ -129,7 +131,7 @@ bool Tree::equal(shared_ptr<Hashable> o) {
 }
 
 uint Tree::hash_code() {
-    CALL("Tree", "hash_code");
+    CALL(FUNCTION);
     uint ans = 0;
     for (int i = 0; i < vertices.size(); i++)
         ans = ans * 23 + vertices[i]->hash_code();
@@ -139,17 +141,17 @@ uint Tree::hash_code() {
 }
 
 void Tree::iter_reset() {
-    CALL("Tree", "iter_reset");
+    CALL(FUNCTION);
     cur_iter = 0;
 }
 
 void Tree::iter_next() {
-    CALL("Tree", "iter_next");
+    CALL(FUNCTION);
     cur_iter++;
 }
 
 bool Tree::iter_loop_finish() {
-    CALL("Tree", "iter_loop_finish");
+    CALL(FUNCTION);
     if (stat == ITERATE_ON_VERTEX) {
         if (cur_iter >= vertices.size()) stat = EMPTY_STATUS;
         return cur_iter >= vertices.size();
@@ -164,14 +166,14 @@ bool Tree::iter_loop_finish() {
 }
 
 bool Tree::iter_at_last() {
-    CALL("Tree", "iter_at_last");
+    CALL(FUNCTION);
     if (stat == ITERATE_ON_VERTEX) return cur_iter == vertices.size() - 1;
     if (stat == ITERATE_ON_EDGE) return cur_iter == edges.size() - 1;
     return false;
 }
 
 void Tree::parse(const string& spec, int n, ...) {
-    CALL("Tree", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {
@@ -237,7 +239,7 @@ void Tree::parse(const string& spec, int n, ...) {
 }
 
 void Tree::gen_random_tree() {
-    CALL("Tree", "gen_random_tree");
+    CALL(FUNCTION);
     for (int i = 1; i < vertex_num->get(); i++) {
         int parent = rand_int(0, i - 1);
         add_edge(parent, i);
@@ -245,21 +247,21 @@ void Tree::gen_random_tree() {
 }
 
 void Tree::gen_flower() {
-    CALL("Tree", "gen_flower");
+    CALL(FUNCTION);
     for (int i = 1; i < vertex_num->get(); i++) {
         add_edge(0, i);
     }
 }
 
-void Tree::gen_chain() {
-    CALL("Tree", "gen_chain");
+auto Tree::gen_chain() -> void {
+    CALL(FUNCTION);
     for (int i = 1; i < vertex_num->get(); i++) {
         add_edge(i - 1, i);
     }
 }
 
-void Tree::gen_long_tree() {
-    CALL("Tree", "gen_long_tree");
+auto Tree::gen_long_tree() -> void {
+    CALL(FUNCTION);
     typedef pair<int,int> pa;
     vector<pa> fetch_set;
     fetch_set.push_back(make_pair(0, 1));
@@ -276,10 +278,8 @@ void Tree::gen_long_tree() {
     }
 }
 
-void Tree::add_edge(int f, int s) {
-    CALL("Tree", "add_edge");
-    links[f].push_back(s);
-    links[s].push_back(f);
+auto Tree::add_edge(int f, int s) -> void {
+    CALL(FUNCTION);
     shared_ptr<Edge> e = dynamic_pointer_cast<Edge>(template_edge->clone());
     e->set(f, s);
     edges.push_back(e);

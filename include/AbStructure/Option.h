@@ -18,7 +18,7 @@ public:
     
     template<typename T>
     std::shared_ptr<T> get() {
-        CALL("Option", "get");
+        CALL(FUNCTION);
         if (result) return std::dynamic_pointer_cast<T>(result);
         int total = 0;
         for (int i = 0; i < robin.size(); i++)

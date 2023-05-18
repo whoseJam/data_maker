@@ -9,14 +9,14 @@
 using namespace std;
 
 Vertex::Vertex() {
-    CALL("Vertex", "Vertex");
+    CALL(FUNCTION);
     idx = UNSET;
 }
 
 Vertex::Vertex(const Vertex& other) :
     Node(other),
     Formatable(other) {
-    CALL("Vertex", "Vertex");
+    CALL(FUNCTION);
     idx = other.idx;
     for (int i = 0; i < other.attrs.size(); i++)
         attrs.push_back(
@@ -33,18 +33,18 @@ Vertex::~Vertex() {
 }
 
 shared_ptr<Vertex> Vertex::format(const string& fmt) {
-    CALL("Vertex", "format");
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Vertex>(shared_from_this());
 }
 
 int Vertex::get() {
-    CALL("Vertex", "get");
+    CALL(FUNCTION);
     return idx;
 }
 
 shared_ptr<Attribute> Vertex::get(const std::string& name) {
-    CALL("Vertex", "get");
+    CALL(FUNCTION);
     for (int i = 0; i < attrs.size(); i++)
         if (attrs[i]->get_name() == name)
             return attrs[i];
@@ -52,12 +52,12 @@ shared_ptr<Attribute> Vertex::get(const std::string& name) {
 }
 
 void Vertex::set(int idx) {
-    CALL("Vertex", "set");
+    CALL(FUNCTION);
     this->idx = idx;
 }
 
 void Vertex::generate(bool re, shared_ptr<Node> from) {
-    CALL("Vertex", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated) return;
     generated = true;
@@ -69,12 +69,12 @@ void Vertex::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Vertex);
 
 void Vertex::out() {
-    CALL("Vertex", "out");
+    CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Vertex");
 }
 
 bool Vertex::equal(shared_ptr<Hashable> o) {
-    CALL("Vertex", "equal");
+    CALL(FUNCTION);
     shared_ptr<Vertex> other = dynamic_pointer_cast<Vertex>(o);
     if (!other) return false;
     if (attrs.size() != other->attrs.size()) return false;
@@ -88,7 +88,7 @@ bool Vertex::equal(shared_ptr<Hashable> o) {
 }
 
 uint Vertex::hash_code() {
-    CALL("Vertex", "hash_code");
+    CALL(FUNCTION);
     uint ans = idx;
     for (int i = 0; i < attrs.size(); i++) {
         ans = ans * 17 + attrs[i]->hash_code();
@@ -96,7 +96,7 @@ uint Vertex::hash_code() {
 }
 
 void Vertex::parse(const string& spec, int n, ...) {
-    CALL("Vertex", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {

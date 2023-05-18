@@ -11,17 +11,17 @@
 using namespace std;
 
 Formatable::Formatable() {
-    CALL("Formatable", "Formatable");
+    CALL(FUNCTION);
     fmt = "UNSET";
 }
 
 Formatable::Formatable(const Formatable& other) {
-    CALL("Formatable", "Formatable");
+    CALL(FUNCTION);
     fmt = other.fmt;
 }
 
 void Formatable::parse(const string& spec, int n, ...) {
-    CALL("Formatable", "parse");
+    CALL(FUNCTION);
     va_list valist;
     va_start(valist, n);
     if (spec == SPEC_LAST) {
@@ -136,7 +136,7 @@ Pre-Condition:
     fmt不应该为UNSET
 */
 void Formatable::parse(shared_ptr<Formatable> obj, const string& fmt, const string& cls) {
-    CALL("Formatable", "parse");
+    CALL(FUNCTION);
     if (fmt == "UNSET") MESSAGE(cls, "format is unset");
     shared_ptr<Iterable> iter_obj = dynamic_pointer_cast<Iterable>(obj);
     if (iter_obj) {

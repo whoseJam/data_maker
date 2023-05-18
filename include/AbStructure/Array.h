@@ -32,7 +32,7 @@ public:
     int get_length();
     template<typename T> 
     std::shared_ptr<T> get(int idx) {
-        CALL("Array", "get");
+        CALL(FUNCTION);
         if (idx < 0 || idx >= elements.size()) MESSAGE("Array", INDEX_OUT_OF_BOUNDARY);
         std::shared_ptr<T> ans = std::dynamic_pointer_cast<T>(elements[idx]);
         if (!ans) MESSAGE("Array", TYPE_ERROR);
@@ -42,8 +42,8 @@ public:
     virtual void generate(bool re, std::shared_ptr<Node> from) override;
     virtual std::shared_ptr<Node> clone() override;
 
-    virtual bool equal(std::shared_ptr<Hashable> other);
-    virtual uint hash_code();
+    virtual bool equal(std::shared_ptr<Hashable> other) override;
+    virtual uint hash_code() override;
 
     virtual void iter_reset() override;
     virtual void iter_next() override;

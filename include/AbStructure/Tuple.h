@@ -23,9 +23,9 @@ public:
     virtual ~Tuple();
     CL_UPDATE_FUNC(Tuple, append, elements, UF_append_vector, CK_base_is(Node), );
     CL_UPDATE_FUNC(Tuple, unshift, elements, UF_unshift_vector, CK_base_is(Node), );
-    std::shared_ptr<Tuple> format(const std::string& fmt);
-    std::shared_ptr<Tuple> when_generating_per_element(std::function<void(std::shared_ptr<Tuple>, int)> );
-    std::shared_ptr<Tuple> after_generate(std::function<void(std::shared_ptr<Tuple>)>);
+    auto format(const std::string& fmt) -> std::shared_ptr<Tuple>;
+    auto when_generating_per_element(std::function<void(std::shared_ptr<Tuple>, int)>) -> std::shared_ptr<Tuple>;
+    auto after_generate(std::function<void(std::shared_ptr<Tuple>)>) -> std::shared_ptr<Tuple>;
 
     template<typename T>
     std::shared_ptr<T> get(int idx) {

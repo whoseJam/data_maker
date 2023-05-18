@@ -10,13 +10,13 @@
 using namespace std;
 
 Node::Node() {
-    CALL("Node", "Node");
+    CALL(FUNCTION);
     generated = false;
     parent = nullptr;
 }
 
 Node::Node(const Node& other) {
-    CALL("Node", "Node");
+    CALL(FUNCTION);
     generated = other.generated;
     parent = other.parent;
 }

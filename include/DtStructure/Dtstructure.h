@@ -2,10 +2,26 @@
 #define DTSTRUCTURE_H
 
 #include <memory>
+#include <string>
 
-class Zero final {
+namespace mk {
+
+class Lazytag;
+class Mergeable;
+class Info;
+
+class Handle {
 public:
-    Zero() = default;
+    Handle(const std::string& name);
+    virtual ~Handle() = default;
+private:
+    std::string type;
+};
+
+class Pushable {
+    Pushable() = default;
+    virtual ~Pushable() = default;
+    virtual void push(std::shared_ptr<Lazytag>, std::shared_ptr<Handle>) = 0;
 };
 
 class Info {
@@ -14,10 +30,9 @@ public:
     virtual ~Info() = default;
 };
 
-class Mergeable {
+class Mergeable : public Info {
 public:
     Mergeable() = default;
-    Mergeable(Zero); 
     virtual ~Mergeable() = default;
     virtual void merge(std::shared_ptr<Mergeable> other) = 0;
 };
@@ -25,10 +40,7 @@ public:
 class Lazytag {
 public:
     Lazytag() = default;
-    Lazytag(Zero);
     virtual ~Lazytag() = default;
-    virtual void push(std::shared_ptr<Lazytag>) = 0;
-    virtual void push(std::shared_ptr<Mergeable>) = 0;
 };
 
 typedef unsigned int uint;
@@ -47,7 +59,6 @@ public:
     virtual int compare_to(std::shared_ptr<Comparable>) = 0;
 };
 
-#define PUSHUP(x) MergeableHelper<T>().push_up(x)
-#define PUSHDOWN(x) LazytagHelper<T>().push_down(x)
+}
 
 #endif

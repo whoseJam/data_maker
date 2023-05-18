@@ -8,13 +8,16 @@
 using namespace std;
 
 Tuple::Tuple() {
-    CALL("Tuple", "Tuple");
+    CALL(FUNCTION);
     fmt = "$x ";
 }
 
-Tuple::Tuple(const Tuple& other) {
-    CALL("Tuple", "Tuple");
-    fmt = other.fmt;
+Tuple::Tuple(const Tuple& other) :
+    Node(other),
+    Formatable(other) {
+    CALL(FUNCTION);
+    callback_when_generating_per_element = other.callback_when_generating_per_element;
+    callback_after_generate = other.callback_after_generate;
     for (auto ele : other.elements) 
         elements.push_back(ele->clone());
 }
@@ -26,27 +29,27 @@ Tuple::~Tuple() {
 }
 
 shared_ptr<Tuple> Tuple::format(const string& fmt) {
-    CALL("Tuple", "format");
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
 shared_ptr<Tuple> Tuple::when_generating_per_element(
     function<void(shared_ptr<Tuple>, int)> callback) {
-    CALL("Tuple", "when_generating_per_element");
+    CALL(FUNCTION);
     callback_when_generating_per_element = callback;
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
 shared_ptr<Tuple> Tuple::after_generate(
     function<void(shared_ptr<Tuple>)> callback) {
-    CALL("Tuple", "after_generate");
+    CALL(FUNCTION);
     callback_after_generate = callback;
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
 void Tuple::generate(bool re, shared_ptr<Node> from) {
-    CALL("Tuple", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -65,7 +68,7 @@ void Tuple::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Tuple);
 
 bool Tuple::equal(shared_ptr<Hashable> o) {
-    CALL("Tuple", "equal");
+    CALL(FUNCTION);
     shared_ptr<Tuple> other = dynamic_pointer_cast<Tuple>(o);
     if (!other) return false;
     if (elements.size() != other->elements.size()) return false;
@@ -78,7 +81,7 @@ bool Tuple::equal(shared_ptr<Hashable> o) {
 }
 
 uint Tuple::hash_code() {
-    CALL("Tuple", "hash_code");
+    CALL(FUNCTION);
     uint ans = elements.size();
     for (int i = 0; i < elements.size(); i++) {
         shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
@@ -88,27 +91,27 @@ uint Tuple::hash_code() {
 }
 
 void Tuple::iter_reset() {
-    CALL("Tuple", "iter_reset");
+    CALL(FUNCTION);
     cur_iter = 0;
 }
 
 void Tuple::iter_next() {
-    CALL("Tuple", "iter_next");
+    CALL(FUNCTION);
     cur_iter++;
 }
 
 bool Tuple::iter_loop_finish() {
-    CALL("Tuple", "iter_loop_finish");
+    CALL(FUNCTION);
     return cur_iter >= elements.size();
 }
 
 bool Tuple::iter_at_last() {
-    CALL("Tuple", "iter_at_last");
+    CALL(FUNCTION);
     return cur_iter == elements.size() - 1;
 }
 
 void Tuple::parse(const string& spec, int n, ...) {
-    CALL("Tuple", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {
@@ -127,6 +130,6 @@ void Tuple::parse(const string& spec, int n, ...) {
 }
 
 void Tuple::out() {
-    CALL("Tuple", "out");
+    CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Tuple");
 }

@@ -10,7 +10,7 @@ using namespace std;
 using namespace Random;
 
 Character::Character() {
-    CALL("Character", "Character");
+    CALL(FUNCTION);
     status = EMPTY;
     fmt = "$x";
 }
@@ -18,7 +18,7 @@ Character::Character() {
 Character::Character(const Character& other) :
     Node(other),
     Formatable(other) {
-    CALL("Character", "Character");
+    CALL(FUNCTION);
     if (other.l) l = dynamic_pointer_cast<Character>(other.l->clone());
     if (other.r) r = dynamic_pointer_cast<Character>(other.r->clone());
     if (other.op) op = dynamic_pointer_cast<Operator<Character>>(other.op->clone());
@@ -35,27 +35,27 @@ Character::~Character() {
 }
 
 shared_ptr<Character> Character::lower_bound(char x) {
-    CALL("Character", "lower_bound");
+    CALL(FUNCTION);
     if (!l) l = make_shared<Character>();
     l->set(x); status = BY_LR;
     return dynamic_pointer_cast<Character>(shared_from_this());
 }
 
 shared_ptr<Character> Character::upper_bound(char x) {
-    CALL("Character", "upper_bound");
+    CALL(FUNCTION);
     if (!r) r = make_shared<Character>();
     r->set(x); status = BY_LR;
     return dynamic_pointer_cast<Character>(shared_from_this());
 }
 
 shared_ptr<Character> Character::format(const string& fmt) {
-    CALL("Character", "format");
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Character>(shared_from_this());
 }
 
 char Character::get() {
-    CALL("Character", "get");
+    CALL(FUNCTION);
     if (status == BY_SET_PTR && ptr_val) return ptr_val->get();
     if (status == BY_LR || status == BY_SET_VAL) return char_val;
     if (status == BY_OP && op) return op->get();
@@ -63,25 +63,25 @@ char Character::get() {
 }
 
 shared_ptr<Character> Character::get_lower_bound() {
-    CALL("Character", "get_lower_bound");
+    CALL(FUNCTION);
     if (!l) MESSAGE("Character", NEED("lower_bound"));
     return l;
 }
 
 shared_ptr<Character> Character::get_upper_bound() {
-    CALL("Character", "get_upper_bound");
+    CALL(FUNCTION);
     if (!r) MESSAGE("Character", NEED("upper_bound"));
     return r;
 }
 
 shared_ptr<Character> Character::set(char x) {
-    CALL("Character", "set");
+    CALL(FUNCTION);
     char_val = x; status = BY_SET_VAL;
     return dynamic_pointer_cast<Character>(shared_from_this());
 }
 
 void Character::generate(bool re, shared_ptr<Node> from) {
-    CALL("Character", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -111,19 +111,19 @@ void Character::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Character);
 
 bool Character::equal(shared_ptr<Hashable> o) {
-    CALL("Character", "equal");
+    CALL(FUNCTION);
     shared_ptr<Character> other = dynamic_pointer_cast<Character>(o);
     if (!other) return false;
     return get() == other->get();
 }
 
 uint Character::hash_code() {
-    CALL("Character", "hash_code");
+    CALL(FUNCTION);
     return (uint) get();
 }
 
 void Character::parse(const string& spec, int n, ...) {
-    CALL("Character", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {
@@ -138,7 +138,7 @@ void Character::parse(const string& spec, int n, ...) {
 }
 
 void Character::out() {
-    CALL("Character", "out");
+    CALL(FUNCTION);
     Formatable::parse(
         shared_from_this(), fmt, "Character");
 }

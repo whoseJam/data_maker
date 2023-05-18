@@ -10,7 +10,7 @@
 using namespace std;
 
 Edge::Edge() {
-    CALL("Edge", "Edge");
+    CALL(FUNCTION);
     start = UNSET;
     end = UNSET;
     fmt = "$s $t\n";
@@ -19,7 +19,7 @@ Edge::Edge() {
 Edge::Edge(const Edge& other) :
     Node(other),
     Formatable(other) {
-    CALL("Edge", "Edge");
+    CALL(FUNCTION);
     for (int i = 0; i < other.attrs.size(); i++)
         attrs.push_back(
             dynamic_pointer_cast<Attribute>(
@@ -30,36 +30,36 @@ Edge::Edge(const Edge& other) :
 }
 
 shared_ptr<Edge> Edge::format(const string& fmt) {
-    CALL("Edge", "format");
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Edge>(shared_from_this());
 }
 
 int Edge::get_start() {
-    CALL("Edge", "get_start");
+    CALL(FUNCTION);
     return start;
 }
 
 int Edge::get_end() {
-    CALL("Edge", "get_end");
+    CALL(FUNCTION);
     return end;
 }
 
 shared_ptr<Attribute> Edge::get(const string& name) {
-    CALL("Edge", "get");
+    CALL(FUNCTION);
     for (int i = 0; i < attrs.size(); i++) 
         if (attrs[i]->get_name() == name) return attrs[i];
     return nullptr;
 }
 
 void Edge::set(int s, int e) {
-    CALL("Edge", "set");
+    CALL(FUNCTION);
     start = s;
     end = e;
 }
 
 void Edge::generate(bool re, shared_ptr<Node> from) {
-    CALL("Edge", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -72,12 +72,12 @@ void Edge::generate(bool re, shared_ptr<Node> from) {
 CL_CLONE(Edge);
 
 void Edge::out() {
-    CALL("Edge", "out");
+    CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Edge");
 }
 
 bool Edge::equal(shared_ptr<Hashable> o) {
-    CALL("Edge", "equal");
+    CALL(FUNCTION);
     shared_ptr<Edge> other = dynamic_pointer_cast<Edge>(o);
     if (!other) return false;
     if (attrs.size() != other->attrs.size()) return false;
@@ -92,7 +92,7 @@ bool Edge::equal(shared_ptr<Hashable> o) {
 }
 
 uint Edge::hash_code() {
-    CALL("Edge", "hash_code");
+    CALL(FUNCTION);
     uint ans = start * 17 + end;
     for (int i = 0; i < attrs.size(); i++) {
         ans = ans * 5 + attrs[i]->hash_code();
@@ -100,7 +100,7 @@ uint Edge::hash_code() {
 }
 
 void Edge::parse(const std::string& spec, int n, ...) {
-    CALL("Edge", "parse");
+    CALL(FUNCTION);
     va_list valist;
     va_start(valist, n);
     if (spec == SPEC_START) {

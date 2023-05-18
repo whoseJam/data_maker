@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Node.h"
+#include "Debug.h"
 #include "Clone.h"
 #include "Logger.h"
 #include "Define.h"
@@ -21,7 +22,7 @@ class Character;
 
 #define LC_RC_BODY(class) \
     virtual void generate(bool re, std::shared_ptr<Node> from) override { \
-        CALL(#class, "generate"); \
+        CALL(FUNCTION); \
         this->from_node = from; \
         if (this->generated && !re) return; \
         this->generated = true; \
@@ -29,7 +30,7 @@ class Character;
         rc->generate(re, std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
     } \
     virtual std::shared_ptr<Node> clone() { \
-        CALL(#class, "clone"); \
+        CALL(FUNCTION); \
         Clone::get()->enter(std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
         struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
         if (Clone::get()->check_stay_with(this->parent)) { \
@@ -59,7 +60,7 @@ class AddOperator :
 public:
     AddOperator() = default;
     AddOperator(AddOperator<I> & other) {
-        CALL("AddOperator<I>", "AddOperator<I>");
+        CALL(FUNCTION);
         if (!other.lc) MESSAGE("AddOperator<I>", NEED("lvalue"));
         if (!other.rc) MESSAGE("AddOperator<I>", NEED("rvalue"));
         this->lc = std::dynamic_pointer_cast<I>(other.lc->clone());
@@ -85,7 +86,7 @@ class SubOperator :
 public:
     SubOperator() = default;
     SubOperator(SubOperator<I> & other) {
-        CALL("SubOperator<I>", "SubOperator<I>");
+        CALL(FUNCTION);
         if (!other.lc) MESSAGE("SubOperator<I>", NEED("lvalue"));
         if (!other.rc) MESSAGE("SubOperator<I>", NEED("rvalue"));
         this->lc = std::dynamic_pointer_cast<I>(other.lc->clone());
@@ -109,7 +110,7 @@ class MulOperator :
 public:
     MulOperator() = default;
     MulOperator(const MulOperator<I> & other) {
-        CALL("MulOperator<I>", "MulOperator<I>");
+        CALL(FUNCTION);
         if (!other.lc) MESSAGE("MulOperator<I>", NEED("lvalue"));
         if (!other.rc) MESSAGE("MulOperator<I>", NEED("rvalue"));
         this->lc = std::dynamic_pointer_cast<I>(other.lc->clone());

@@ -93,14 +93,14 @@ UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么
 #define CL_UPDATE_FUNC(class, func, member, UPDATEFUNC, checker, additional) \
     template<typename T, typename CHECKER = std::enable_if_t<checker>> \
     std::shared_ptr<class> func(T& var) { \
-        CALL(#class, #func); \
+        CALL(FUNCTION); \
         UPDATEFUNC(this->member, var); \
         additional; \
         return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
     } \
     template<typename T, typename CHECKER = std::enable_if_t<checker>> \
     std::shared_ptr<class> func(T&& var) { \
-        CALL(#class, #func); \
+        CALL(FUNCTION); \
         UPDATEFUNC(this->member, var); \
         additional; \
         return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
@@ -108,7 +108,7 @@ UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么
 
 #define CL_CLONE(class) \
     shared_ptr<Node> class::clone() { \
-        CALL(#class, "clone"); \
+        CALL(FUNCTION); \
         Clone::get()->enter(dynamic_pointer_cast<Node>(shared_from_this())); \
         struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
         if (Clone::get()->check_stay_with(parent)) { \

@@ -9,14 +9,14 @@
 using namespace std;
 
 Array::Array() {
-    CALL("Array", "Array");
+    CALL(FUNCTION);
     fmt = "$x ";
 }
 
 Array::Array(const Array& other) : 
     Node(other), 
     Formatable(other) {
-    CALL("Array", "Array");
+    CALL(FUNCTION);
     callback_when_generating_per_element = other.callback_when_generating_per_element;
     callback_after_generate = other.callback_after_generate;
     if (!other.len) MESSAGE("Array", NEED("length"));
@@ -34,52 +34,52 @@ Array::~Array() {
 }
 
 shared_ptr<Array> Array::length(int len) {
-    CALL("Array", "length");
+    CALL(FUNCTION);
     if (!this->len) this->len = make_shared<Integer>();
     this->len->set(len);
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
 shared_ptr<Array> Array::length(shared_ptr<Integer> len) {
-    CALL("Array", "length");
+    CALL(FUNCTION);
     this->len = len;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
 shared_ptr<Array> Array::fill(shared_ptr<Node> ele) {
-    CALL("Array", "fill");
+    CALL(FUNCTION);
     this->template_ele = ele;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
 shared_ptr<Array> Array::format(const string& fmt) {
-    CALL("Array", "format");
+    CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
 shared_ptr<Array> Array::when_generating_per_element(
     function<void(shared_ptr<Array>, int)> callback) {
-    CALL("Array", "when_generating_per_element");
+    CALL(FUNCTION);
     callback_when_generating_per_element = callback;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
 shared_ptr<Array> Array::after_generate(
     function<void(shared_ptr<Array>)> callback) {
-    CALL("Array", "after_generate");
+    CALL(FUNCTION);
     callback_after_generate = callback;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
 int Array::get_length() {
-    CALL("Array", "get_length");
+    CALL(FUNCTION);
     if (!len) MESSAGE("Array", NEED("length"));
     return len->get();
 }
 
 void Array::generate(bool re, std::shared_ptr<Node> from) {
-    CALL("Array", "generate");
+    CALL(FUNCTION);
     from_node = from;
     if (generated && !re) return;
     generated = true;
@@ -103,7 +103,7 @@ void Array::generate(bool re, std::shared_ptr<Node> from) {
 CL_CLONE(Array);
 
 bool Array::equal(shared_ptr<Hashable> o) {
-    CALL("Array", "equal");
+    CALL(FUNCTION);
     shared_ptr<Array> other = dynamic_pointer_cast<Array>(o);
     if (!other) return false;
     if (!len->equal(other->len)) return false;
@@ -115,7 +115,7 @@ bool Array::equal(shared_ptr<Hashable> o) {
 }
 
 uint Array::hash_code() {
-    CALL("Array", "hash_code");
+    CALL(FUNCTION);
     uint ans = len->get();
     for (int i = 0; i < elements.size(); i++) {
         shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
@@ -125,27 +125,27 @@ uint Array::hash_code() {
 }
 
 void Array::iter_reset() {
-    CALL("Array", "iter_reset");
+    CALL(FUNCTION);
     cur_iter = 0;
 }
 
 void Array::iter_next() {
-    CALL("Array", "iter_next");
+    CALL(FUNCTION);
     cur_iter++;
 }
 
 bool Array::iter_loop_finish() {
-    CALL("Array", "iter_loop_finish");
+    CALL(FUNCTION);
     return cur_iter >= elements.size();
 }
 
 bool Array::iter_at_last() {
-    CALL("Array", "iter_at_last");
+    CALL(FUNCTION);
     return cur_iter == elements.size() - 1;
 }
 
 void Array::parse(const string& spec, int n, ...) {
-    CALL("Array", "parse");
+    CALL(FUNCTION);
     try {
         CALL_FORMATTER(spec, n);
     } catch (SpecNotFoundException& e) {
@@ -164,7 +164,7 @@ void Array::parse(const string& spec, int n, ...) {
 }
 
 void Array::out() {
-    CALL("Array", "out");
+    CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Array");
 }
 
