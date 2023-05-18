@@ -9,6 +9,8 @@
 
 using namespace std;
 
+namespace mk {
+
 bool check_file_exist(const string& name) {
     ifstream f(name.c_str());
     return f.good();
@@ -158,12 +160,12 @@ void IO::generate() {
     }
 }
 
-namespace mk {
-    shared_ptr<IO> standard_io() {
-        return make_shared<IO>()
-        ->input_prefix("input")
-        ->input_suffix("txt")
-        ->output_prefix("output")
-        ->output_suffix("txt");
-    }
+shared_ptr<IO> standard_io() {
+    return make_shared<IO>()
+    ->input_prefix("input")
+    ->input_suffix("txt")
+    ->output_prefix("output")
+    ->output_suffix("txt");
+}
+
 }

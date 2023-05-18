@@ -8,7 +8,8 @@
 #include "HashMap.h"
 #include "Attribute.h"
 
-class EdgePanel;
+
+namespace mk {
 
 class Edge : 
     public Node, 
@@ -42,8 +43,6 @@ private:
     int end;
 };
 
-namespace mk {
-    std::shared_ptr<Edge> edge();
+std::shared_ptr<Edge> edge();
 }
-
 #endif

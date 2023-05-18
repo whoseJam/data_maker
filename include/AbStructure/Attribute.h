@@ -10,6 +10,8 @@
 #include "Format.h"
 #include "HashMap.h"
 
+namespace mk {
+
 class Attribute : 
     public Node,
     public Hashable,
@@ -40,18 +42,17 @@ private:
     std::string key;
 };
 
-namespace mk {
-    std::shared_ptr<Attribute> attr();
+std::shared_ptr<Attribute> attr();
     
-    template<typename T, typename CHECKER = 
-        std::enable_if_t<
-            std::is_base_of_v<
-                Node,
-                shared_ptr_t<std::decay_t<T>>>>>
-    std::shared_ptr<Attribute> attr(const std::string& name, T&& val) {
-        return std::make_shared<Attribute>()
-            ->name(name)->value(val);
-    }
+template<typename T, typename CHECKER = 
+    std::enable_if_t<
+        std::is_base_of_v<
+            Node,
+            shared_ptr_t<std::decay_t<T>>>>>
+std::shared_ptr<Attribute> attr(const std::string& name, T&& val) {
+    return std::make_shared<Attribute>()
+    ->name(name)->value(val);
+}
 }
 
 #endif

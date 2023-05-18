@@ -10,6 +10,7 @@ include_directories(../../include/AbStructure)
 include_directories(../../include/DtStructure)
 include_directories(../../include/Utility)
 
-aux_source_directory(. ABSTRUCTURE_SRC_LIST)
+# aux_source_directory(. ABSTRUCTURE_SRC_LIST)
+set(ABSTRUCTURE_SRC_LIST Node.cpp Integer.cpp Format.cpp Character.cpp)
 
 add_library(${PROJECT_NAME} ${ABSTRUCTURE_SRC_LIST})

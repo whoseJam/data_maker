@@ -83,45 +83,6 @@ using shared_ptr_t = typename get_shared_ptr_inner_type<T>::type;
 // 一个赋值的update func
 #define UF_assign(structure, var)           structure = var;
 
-/*
-Description:
-依次传入class, func, member, var, UPDATEFUNC
-class:当前类名
-func:一个函数名，该函数作用是把var赋值给member
-UPDATEFUNC:指定如何将var更新member，如果member是一个指针，那么可能使用UF_assign；如果member是一个vector，那么可能使用UF_append_vector
-*/
-#define CL_UPDATE_FUNC(class, func, member, UPDATEFUNC, checker, additional) \
-    template<typename T, typename CHECKER = std::enable_if_t<checker>> \
-    std::shared_ptr<class> func(T& var) { \
-        CALL(FUNCTION); \
-        UPDATEFUNC(this->member, var); \
-        additional; \
-        return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
-    } \
-    template<typename T, typename CHECKER = std::enable_if_t<checker>> \
-    std::shared_ptr<class> func(T&& var) { \
-        CALL(FUNCTION); \
-        UPDATEFUNC(this->member, var); \
-        additional; \
-        return std::dynamic_pointer_cast<class>(this->shared_from_this()); \
-    }
-
-#define CL_CLONE(class) \
-    shared_ptr<Node> class::clone() { \
-        CALL(FUNCTION); \
-        Clone::get()->enter(dynamic_pointer_cast<Node>(shared_from_this())); \
-        struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
-        if (Clone::get()->check_stay_with(parent)) { \
-            if (!Clone::get()->check(this)) \
-                Clone::get()->insert(this, std::make_shared<class>(*this)); \
-            return Clone::get()->check(this); \
-        } \
-        return std::make_shared<class>(*this); \
-    }
-
 int unknown(int code);
-
-#define BUILD(project) \
-    project->generate(0, nullptr); project->out();
 
 #endif

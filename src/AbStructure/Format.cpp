@@ -10,6 +10,8 @@
 
 using namespace std;
 
+namespace mk {
+
 Formatable::Formatable() {
     CALL(FUNCTION);
     fmt = "UNSET";
@@ -154,4 +156,6 @@ void Formatable::parse(shared_ptr<Formatable> obj, const string& fmt, const stri
             else cout << fmt[i];
         }
     }
+}
+
 }

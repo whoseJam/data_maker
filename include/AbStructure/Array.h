@@ -13,23 +13,25 @@
 #include "Integer.h"
 #include "HashMap.h"
 
+namespace mk {
+
 class Array : 
     public Node, 
-    public Hashable,
     public Iterable,
     public Formatable {
 public:
     Array();
     Array(const Array& other);
     virtual ~Array();
-    std::shared_ptr<Array> length(int len);
-    std::shared_ptr<Array> length(std::shared_ptr<Integer> len);
-    std::shared_ptr<Array> fill(std::shared_ptr<Node> ele);
-    std::shared_ptr<Array> format(const std::string& fmt);
-    std::shared_ptr<Array> when_generating_per_element(std::function<void(std::shared_ptr<Array>, int)>);
-    std::shared_ptr<Array> after_generate(std::function<void(std::shared_ptr<Array>)>);
+    auto length(int len) -> std::shared_ptr<Array>;
+    auto length(std::shared_ptr<Integer> len) -> std::shared_ptr<Array>;
+    auto fill(std::shared_ptr<Node> ele) -> std::shared_ptr<Array>;
+    auto format(const std::string& fmt) -> std::shared_ptr<Array>;
+    auto before_generate(std::function<void(std::shared_ptr<Array>)>) -> std::shared_ptr<Array>;
+    auto when_generating(std::function<void(std::shared_ptr<Array>, int)>) -> std::shared_ptr<Array>;
+    auto after_generate(std::function<void(std::shared_ptr<Array>)>) -> std::shared_ptr<Array>;
 
-    int get_length();
+    int length();
     template<typename T> 
     std::shared_ptr<T> get(int idx) {
         CALL(FUNCTION);
@@ -39,11 +41,8 @@ public:
         return ans;
     }
 
-    virtual void generate(bool re, std::shared_ptr<Node> from) override;
+    virtual void generate(bool re) override;
     virtual std::shared_ptr<Node> clone() override;
-
-    virtual bool equal(std::shared_ptr<Hashable> other) override;
-    virtual uint hash_code() override;
 
     virtual void iter_reset() override;
     virtual void iter_next() override;
@@ -53,7 +52,8 @@ public:
     virtual void parse(const std::string& spec, int n, ...) override;
     virtual void out() override;
 private:
-    std::function<void(std::shared_ptr<Array>, int)> callback_when_generating_per_element;
+    std::function<void(std::shared_ptr<Array>)> callback_before_generate;
+    std::function<void(std::shared_ptr<Array>, int)> callback_when_generating;
     std::function<void(std::shared_ptr<Array>)> callback_after_generate;
     std::shared_ptr<Integer> len;
     std::shared_ptr<Node> template_ele;
@@ -61,31 +61,31 @@ private:
     int cur_iter;
 };
 
-namespace mk {
-    std::shared_ptr<Array> array();
+std::shared_ptr<Array> array();
 
-    template<typename T, typename CHECKER = 
-        std::enable_if_t<
-            std::is_same_v<std::decay_t<T>, int> ||
-            std::is_same_v<
-                Integer,
-                shared_ptr_t<std::decay_t<T>>>>>
-    std::shared_ptr<Array> array(T&& n) {
-        return array()->length(n);
-    }
+template<typename T, typename CHECKER = 
+    std::enable_if_t<
+        std::is_same_v<std::decay_t<T>, int> ||
+        std::is_same_v<
+            Integer,
+            shared_ptr_t<std::decay_t<T>>>>>
+std::shared_ptr<Array> array(T&& n) {
+    return array()->length(n);
+}
 
-    template<typename T, typename E, typename CHECKER = 
-        std::enable_if_t<
-           (std::is_same_v<std::decay_t<T>, int> ||
-            std::is_same_v<
-                Integer,
-                shared_ptr_t<std::decay_t<T>>>) &&
-            std::is_base_of_v<
-                Node,
-                shared_ptr_t<std::decay_t<E>>>>>
-    std::shared_ptr<Array> array(T&& n, E&& e) {
-        return array(n)->fill(e);
-    }
+template<typename T, typename E, typename CHECKER = 
+    std::enable_if_t<
+       (std::is_same_v<std::decay_t<T>, int> ||
+        std::is_same_v<
+            Integer,
+            shared_ptr_t<std::decay_t<T>>>) &&
+        std::is_base_of_v<
+            Node,
+            shared_ptr_t<std::decay_t<E>>>>>
+std::shared_ptr<Array> array(T&& n, E&& e) {
+    return array(n)->fill(e);
+}
+
 }
 
 

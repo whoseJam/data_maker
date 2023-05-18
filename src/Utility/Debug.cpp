@@ -5,6 +5,8 @@
 
 using namespace std;
 
+namespace mk {
+
 Call::Call(const string& fun) {
     CallStack::get()->enter("empty", fun);
 }
@@ -35,4 +37,6 @@ void CallStack::print() {
         cls.pop_front();
         func.pop_front();
     }
+}
+
 }

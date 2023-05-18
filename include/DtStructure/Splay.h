@@ -624,13 +624,13 @@ auto Splay<T, L>::split(int l, int r) -> std::shared_ptr<Splay<T, L>> {
     splay(rq, root_);
     auto next = find_root_next();
     if (!prev && !next) { auto ans = std::make_shared<Splay<T, L>>(); ans->root(std::move(root_)); return ans; }
-    else if (!prev) { splay(next, root_); auto rt = root_->ch[0]; root_->remove_child(0); PUSHUP(Splay, root_); auto ans = std::make_shared<Splay<T, L>>(); ans->root(rt); return ans; }
-    else if (!next) { splay(prev, root_); auto rt = root_->ch[1]; root_->remove_child(1); PUSHUP(Splay, root_); auto ans = std::make_shared<Splay<T, L>>(); ans->root(rt); return ans; }
+    else if (!prev) { splay(next, root_); auto rt = root_->ch[0]; root_->remove_child(0); root_->push_up(); auto ans = std::make_shared<Splay<T, L>>(); ans->root(rt); return ans; }
+    else if (!next) { splay(prev, root_); auto rt = root_->ch[1]; root_->remove_child(1); root_->push_up(); auto ans = std::make_shared<Splay<T, L>>(); ans->root(rt); return ans; }
     splay(prev, root_); splay(next, root_->ch[1]);
     auto rt = root_->ch[1]->ch[0];
     root_->ch[1]->remove_child(0);
-    PUSHUP(Splay, root_->ch[1]);
-    PUSHUP(Splay, root_);
+    root_->ch[1]->push_up();
+    root_->push_up();
     auto ans = std::make_shared<Splay<T, L>>(); ans->root(rt); return ans;
 }
 
@@ -676,7 +676,7 @@ auto Splay<T, L>::query(std::shared_ptr<SplayNode> cur, std::shared_ptr<T> info)
     auto cur_info = std::dynamic_pointer_cast<Comparable>(cur->info);
     auto new_info = std::dynamic_pointer_cast<Comparable>(info);
     if (!cur_info || !new_info) MESSAGE("Splay<T, L>", UNABLE("Comparable"));
-    PUSHDOWN(Splay, cur);
+    cur->push_down();
     auto cmp_ans = cur_info->compare_to(new_info);
     if (cmp_ans < 0) return query(cur->ch[1], info);
     else if (cmp_ans == 0) return cur;
@@ -737,7 +737,7 @@ template<typename T, typename L>
 auto Splay<T, L>::find_kth_min(std::shared_ptr<SplayNode> cur, int k) -> std::shared_ptr<SplayNode> {
     CALL(FUNCTION);
     if (!cur) return nullptr;
-    PUSHDOWN(Splay, cur);
+    cur->push_down();
     int left = (cur->ch[0]) ? (cur->ch[0]->size_) : 0;
     if (left + 1 <= k && k <= left + (cur->same_)) return cur;
     if (left >= k) return find_kth_min(cur->ch[0], k);
@@ -752,7 +752,7 @@ template<typename T, typename L>
 auto Splay<T, L>::find_kth_max(std::shared_ptr<SplayNode> cur, int k) -> std::shared_ptr<SplayNode> {
     CALL(FUNCTION);
     if (!cur) return nullptr;
-    PUSHDOWN(Splay, cur);
+    cur->push_down();
     int right = (cur->ch[1]) ? (cur->ch[1]->size_) : 0;
     if (right + 1 <= k && k <= right + (cur->same_)) return cur;
     if (right >= k) return find_kth_max(cur->ch[1], k);
@@ -769,7 +769,7 @@ auto Splay<T, L>::find_root_prev() -> std::shared_ptr<SplayNode> {
     auto u = root_->ch[0];
     if (!u) return u;
     while (u->ch[1]) {
-        PUSHDOWN(Splay, u);
+        u->push_down();
         u = u->ch[1];
     } return u;
 }
@@ -784,7 +784,7 @@ auto Splay<T, L>::find_root_next() -> std::shared_ptr<SplayNode> {
     auto u = root_->ch[1];
     if (!u) return u;
     while (u->ch[0]) {
-        PUSHDOWN(Splay, u);
+        u->push_down();
         u = u->ch[0];
     } return u;
 }

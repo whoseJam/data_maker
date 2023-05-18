@@ -6,6 +6,8 @@
 
 #include "Dtstructure.h"
 
+namespace mk {
+
 class HashMap {
 public:
     HashMap();
@@ -25,8 +27,7 @@ private:
     int total;
 };
 
-namespace mk {
-    std::shared_ptr<HashMap> hash_map();
+std::shared_ptr<HashMap> hash_map();
 }
 
 #endif

@@ -4,28 +4,12 @@
 #include <gtest.h>
 #include <memory>
 
+#include "Dtstructure.h"
 #include "Tree.h"
 #include "ETT.h"
 
 using namespace mk;
 using namespace std;
-
-struct Val : public Info {
-    int val;
-    Val() : val(0) {}
-    Val(int v) : val(v) {}
-};
-
-
-struct Sum : public Mergeable {
-    int sum;
-    Sum() : sum(0) {}
-    Sum(int s) : sum(s) {}
-    void merge(std::shared_ptr<Mergeable> o) {
-        auto other = dynamic_pointer_cast<Sum>(o);
-        sum += other->sum;
-    }
-};
 
 struct Add : public Lazytag {
     int add;
@@ -35,18 +19,32 @@ struct Add : public Lazytag {
         auto other = dynamic_pointer_cast<Add>(o);
         other->add += add;
     }
-    void push(shared_ptr<Info> o, shared_ptr<Handle> h) override {
-        int size = 0;
-        {   auto sp = dynamic_pointer_cast<SplayHandle>(h);
-            if (sp) size = sp->size();
-        }   // Splay
+};
 
-        {   auto other = dynamic_pointer_cast<Val>(o);
-            if (other) { other->val += add; }
-        }   // Val
-        {   auto other = dynamic_pointer_cast<Sum>(o);
-            if (other) { other->sum += add * size; }
-        }   // Sum
+struct Val : public Info, public Pushable {
+    int val;
+    Val() : val(0) {}
+    Val(int v) : val(v) {}
+    virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
+        auto add_tag = dynamic_pointer_cast<Add>(tag);
+        val += add_tag->add;
+
+    }
+};
+
+
+struct Sum : public Mergeable, public Pushable {
+    int sum;
+    Sum() : sum(0) {}
+    Sum(int s) : sum(s) {}
+    void merge(std::shared_ptr<Mergeable> o) {
+        auto other = dynamic_pointer_cast<Sum>(o);
+        sum += other->sum;
+    }
+    virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
+        auto add_tag = dynamic_pointer_cast<Add>(tag);
+        auto ett_handle = dynamic_pointer_cast<ETTHandle>(handle);
+        sum += add_tag->add * ett_handle->vertex_size();
     }
 };
 

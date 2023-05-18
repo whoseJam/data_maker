@@ -5,6 +5,8 @@
 
 using namespace std;
 
+namespace mk {
+
 HashMap::HashMap() {
     CALL(FUNCTION);
     diff = 0;
@@ -93,8 +95,5 @@ int HashMap::query_different() {
     return diff;
 }
 
-namespace mk {
-    shared_ptr<HashMap> hash_map() {
-        return make_shared<HashMap>();
-    }
+shared_ptr<HashMap> hash_map() { return make_shared<HashMap>(); }
 }

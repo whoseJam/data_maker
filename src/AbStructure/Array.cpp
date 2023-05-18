@@ -1,12 +1,15 @@
+#include <functional>
+#include <memory>
 #include <utility>
 #include <iostream>
 
 #include "Debug.h"
 #include "Array.h"
-#include "Clone.h"
 #include "Logger.h"
 
 using namespace std;
+
+namespace mk {
 
 Array::Array() {
     CALL(FUNCTION);
@@ -17,7 +20,8 @@ Array::Array(const Array& other) :
     Node(other), 
     Formatable(other) {
     CALL(FUNCTION);
-    callback_when_generating_per_element = other.callback_when_generating_per_element;
+    callback_before_generate = other.callback_before_generate;
+    callback_when_generating = other.callback_when_generating;
     callback_after_generate = other.callback_after_generate;
     if (!other.len) MESSAGE("Array", NEED("length"));
     if (!other.template_ele) MESSAGE("Array", NEED("fill"));
@@ -36,7 +40,7 @@ Array::~Array() {
 shared_ptr<Array> Array::length(int len) {
     CALL(FUNCTION);
     if (!this->len) this->len = make_shared<Integer>();
-    this->len->set(len);
+    this->len->value(len);
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
@@ -52,47 +56,57 @@ shared_ptr<Array> Array::fill(shared_ptr<Node> ele) {
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-shared_ptr<Array> Array::format(const string& fmt) {
+auto Array::format(const string& fmt) -> shared_ptr<Array> {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-shared_ptr<Array> Array::when_generating_per_element(
-    function<void(shared_ptr<Array>, int)> callback) {
+auto Array::before_generate(
+    function<void(shared_ptr<Array>)> callback) -> shared_ptr<Array> {
     CALL(FUNCTION);
-    callback_when_generating_per_element = callback;
+    callback_before_generate = callback;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-shared_ptr<Array> Array::after_generate(
-    function<void(shared_ptr<Array>)> callback) {
+auto Array::when_generating(
+    function<void(shared_ptr<Array>, int)> callback) -> shared_ptr<Array> {
+    CALL(FUNCTION);
+    callback_when_generating = callback;
+    return dynamic_pointer_cast<Array>(shared_from_this());
+}
+
+auto Array::after_generate(
+    function<void(shared_ptr<Array>)> callback) -> shared_ptr<Array> {
     CALL(FUNCTION);
     callback_after_generate = callback;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-int Array::get_length() {
+auto Array::length() -> int {
     CALL(FUNCTION);
     if (!len) MESSAGE("Array", NEED("length"));
-    return len->get();
+    return len->value();
 }
 
-void Array::generate(bool re, std::shared_ptr<Node> from) {
+auto Array::generate(bool re) -> void {
     CALL(FUNCTION);
-    from_node = from;
     if (generated && !re) return;
     generated = true;
     
     if (!len) MESSAGE("Array", NEED("length"));
     if (!template_ele) MESSAGE("Array", NEED("fill"));
-    len->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
-    for (int i = 1; i <= len->get(); i++)
+
+    if (callback_before_generate)
+        callback_before_generate(
+            dynamic_pointer_cast<Array>(shared_from_this()));
+    len->generate(re);
+    for (int i = 1; i <= len->value(); i++)
         elements.push_back(template_ele->clone());
     for (int i = 0; i < elements.size(); i++) {
-        elements[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
-        if (callback_when_generating_per_element)
-            callback_when_generating_per_element(
+        elements[i]->generate(re);
+        if (callback_when_generating)
+            callback_when_generating(
                 dynamic_pointer_cast<Array>(shared_from_this()), i);
     }
     if (callback_after_generate)
@@ -101,28 +115,6 @@ void Array::generate(bool re, std::shared_ptr<Node> from) {
 }
 
 CL_CLONE(Array);
-
-bool Array::equal(shared_ptr<Hashable> o) {
-    CALL(FUNCTION);
-    shared_ptr<Array> other = dynamic_pointer_cast<Array>(o);
-    if (!other) return false;
-    if (!len->equal(other->len)) return false;
-    for (int i = 0; i < elements.size(); i++) {
-        shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
-        shared_ptr<Hashable> b = dynamic_pointer_cast<Hashable>(other->elements[i]);
-        if (!a->equal(b)) return false;
-    } return true;
-}
-
-uint Array::hash_code() {
-    CALL(FUNCTION);
-    uint ans = len->get();
-    for (int i = 0; i < elements.size(); i++) {
-        shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
-        ans = ans * 13 + a->hash_code();
-    }
-    return ans;
-}
 
 void Array::iter_reset() {
     CALL(FUNCTION);
@@ -168,12 +160,6 @@ void Array::out() {
     Formatable::parse(shared_from_this(), fmt, "Array");
 }
 
-namespace mk {
-    shared_ptr<Array> array() {
-        return make_shared<Array>();
-    }
-
-    shared_ptr<Array> array(int n) {
-        return make_shared<Array>()->length(n);
-    }
+shared_ptr<Array> array() { return make_shared<Array>(); }
+shared_ptr<Array> array(int n) { return make_shared<Array>()->length(n); }
 }

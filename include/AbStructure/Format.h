@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+namespace mk {
+
 class Iterable {
 public:
     virtual void iter_reset() = 0;
@@ -31,5 +33,7 @@ public:
 private:
     std::string msg;
 };
+
+}
 
 #endif

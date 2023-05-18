@@ -26,6 +26,8 @@ inline std::string className(const std::string& prettyFunction) {
     #define CALL(class, func)
 #endif
 
+namespace mk {
+
 class Call {
 public:
     Call(const std::string& fun);
@@ -43,5 +45,7 @@ private:
     std::list<std::string> cls;
     std::list<std::string> func;
 };
+
+}
 
 #endif

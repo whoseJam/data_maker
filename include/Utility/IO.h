@@ -6,6 +6,8 @@
 #include <vector>
 #include <functional>
 
+namespace mk {
+
 using Genfun = std::function<void()>;
 
 class IO :
@@ -38,8 +40,7 @@ private:
     bool skip_exist_data;
 };
 
-namespace mk {
-    std::shared_ptr<IO> standard_io();
+std::shared_ptr<IO> standard_io();
 }
 
 #endif

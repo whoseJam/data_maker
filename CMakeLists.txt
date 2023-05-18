@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
-set(SRC_LIST example/test/test_splay.cpp)
+set(SRC_LIST example/test/test_array.cpp)
 
 # if ()
 #     message(STATUS "making example/history/${TH}.cpp")
@@ -23,9 +23,9 @@ include_directories(src/DtStructure)
 include_directories(/usr/local/include/gtest)
 
 add_subdirectory(src/AbStructure)
-add_subdirectory(src/DtStructure)
+# add_subdirectory(src/DtStructure)
 add_subdirectory(src/Utility)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC AbStructure DtStructure Utility gtest)
+target_link_libraries(${PROJECT_NAME} PUBLIC AbStructure Utility gtest)# DtStructure Utility gtest)

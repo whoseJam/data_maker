@@ -1,36 +1,53 @@
+
+#include <gtest.h>
 #include <iostream>
+
 #include "Integer.h"
+#include "Node.h"
 
 using namespace std;
+using namespace mk;
 
-void test_nested_integer() {
-    shared_ptr<Integer> a = integer(1, 10)->format("$x hello world\n");
-    a->generate(0);
-    a->out();
-
-    shared_ptr<Integer> b = integer(integer(1, 100), 100);
-    b->generate(0);
-    b->out(); cout << "\n";
-
-    shared_ptr<Integer> c = integer(integer(1, 10), integer(100, 1000));
-    c->generate(0);
-    auto lc = c->get_lower_bound();
-    auto rc = c->get_upper_bound();
-    cout << "c=" << c->get() << " lc=" << lc->get() << " rc=" << rc->get() << "\n";
-    cout << "lc's owner = " << lc.use_count() << "\n"; auto lc_ = c->get_lower_bound();
-    cout << "lc's owner = " << lc.use_count() << "\n"; auto lc__ = lc;
-    cout << "lc's owner = " << lc.use_count() << "\n";
-    cout << " c's owner = " <<  c.use_count() << "\n";
+TEST(IntegerTest, NestedInteger) {
+    for (int i = 1; i <= 10; i++) {
+        auto a = integer(1, 10)->format("$x hello\n");
+        auto b = integer(integer(1, 100), 100);
+        auto c = integer(integer(1, 10), integer(20, 30));
+        BUILD(a); BUILD(b); BUILD(c);
+        ASSERT_TRUE(a->lower_bound()->value() == 1);
+        ASSERT_TRUE(1 <= a->value() && a->value() <= 10);
+        auto bl = b->lower_bound();
+        ASSERT_TRUE(1 <= bl->value() && bl->value() <= 100);
+        ASSERT_TRUE(bl->value() <= b->value() && b->value() <= 100);
+        auto cl = c->lower_bound();
+        auto cr = c->upper_bound();
+        ASSERT_TRUE(1 <= cl->value() && cl->value() <= 10);
+        ASSERT_TRUE(20 <= cr->value() && cr->value() <= 30);
+        ASSERT_TRUE(cl->value() <= c->value() && c->value() <= cr->value());
+    }
 }
 
-void test_format() {
-    auto a = integer(10, 100)->format("this is $x\n");
-    a->generate(0); a->out();
-
+TEST(IntegerTest, BasicOperatorTest) {
+    for (int i = 1; i <= 10; i++) {
+        auto a = integer(1, 100) - integer(1, 100);
+        auto b = integer(1, 10) + integer(1, 10) * integer(1, 10);
+        auto c = (integer(1, 10) + integer(1, 10)) * integer(10);
+        BUILD(a); BUILD(b); BUILD(c);
+        ASSERT_TRUE(-99 <= a->value() && a->value() <= 99);
+        ASSERT_TRUE(2 <= b->value() && b->value() <= 110);
+        ASSERT_TRUE(20 <= c->value() && c->value() <= 200);
+        auto A = integer(1, 10);
+        auto B = integer(1, 10);
+        auto AplusB = A + B;
+        auto AminusB = A - B;
+        auto ans1 = AplusB * AminusB;
+        auto ans2 = A * A - B * B;
+        BUILD(ans1); BUILD(ans2);
+        ASSERT_TRUE(ans1->value() == ans2->value());
+    }
 }
 
-int main() {
-    test_nested_integer();
-    test_format();
-    return 0;
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

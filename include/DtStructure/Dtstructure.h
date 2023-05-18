@@ -19,6 +19,7 @@ private:
 };
 
 class Pushable {
+public:
     Pushable() = default;
     virtual ~Pushable() = default;
     virtual void push(std::shared_ptr<Lazytag>, std::shared_ptr<Handle>) = 0;
@@ -37,7 +38,7 @@ public:
     virtual void merge(std::shared_ptr<Mergeable> other) = 0;
 };
 
-class Lazytag {
+class Lazytag : public Pushable {
 public:
     Lazytag() = default;
     virtual ~Lazytag() = default;

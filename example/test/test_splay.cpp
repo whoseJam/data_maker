@@ -2,18 +2,52 @@
 #include <assert.h>
 #include <gtest.h>
 #include <cmath>
+#include <memory>
 
+#include "Dtstructure.h"
 #include "Splay.h"
-#include "Array.h"
-#include "Tuple.h"
-#include "Option.h"
-#include "Character.h"
+#include "Random.h"
 
 using namespace mk;
 using namespace std;
 using namespace Random;
 
 const int inf=0x3f3f3f3f;
+
+struct Add : public Lazytag {
+    int add;
+    Add() : add(0) {}
+    Add(int a) : add(a) {}
+    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
+        auto other = dynamic_pointer_cast<Add>(o);
+        other->add += add;
+    }
+};
+
+struct AddAndMul : public Lazytag {
+    int k, b;
+    AddAndMul() : k(1), b(0) {}
+    AddAndMul(int k, int b) : k(k), b(b) {}
+    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
+        auto other = dynamic_pointer_cast<AddAndMul>(o);
+        other->k *= k;
+        other->b *= k; other->b += b;
+    }
+};
+
+struct Rev : public Lazytag {
+    bool rev;
+    Rev() : rev(0) {}
+    Rev(bool r) : rev(r) {}
+    void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
+        auto other = dynamic_pointer_cast<Rev>(tag);
+        other->rev ^= rev;
+        {   auto sp = dynamic_pointer_cast<SplayHandle>(handle);
+            if (rev) sp->swap_child();
+        }   //Splay
+    }
+};
+
 
 struct Int : public Comparable {
     int val;
@@ -31,7 +65,7 @@ struct Val : public Info {
     Val(int v) : val(v) {}
 };
 
-struct Sum : public Mergeable {
+struct Sum : public Mergeable, public Pushable {
     int sum;
     Sum() : sum(0) {}
     Sum(int v) : sum(v) {}
@@ -39,13 +73,18 @@ struct Sum : public Mergeable {
         auto other = dynamic_pointer_cast<Sum>(o);
         sum += other->sum;
     }
+    virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) {
+        auto hd = dynamic_pointer_cast<SplayHandle>(handle);
+        auto add_tag = dynamic_pointer_cast<Add>(tag);
+        sum += hd->size() * add_tag->add;
+    }
 };
 
 struct XorSumAndMin : public Mergeable {
     int sum, mn;
     XorSumAndMin() : sum(0), mn(inf) {}
     XorSumAndMin(int v) : sum(v), mn(v) {}
-    void merge(shared_ptr<Mergeable> o) override {
+    virtual void merge(shared_ptr<Mergeable> o) override {
         auto other = dynamic_pointer_cast<XorSumAndMin>(o);
         sum ^= other->sum;
         mn = min(mn, other->mn);
@@ -65,59 +104,6 @@ struct Longest1 : public Mergeable {
         left1 = (len == left1) ? left1 + other->left1 : left1;
         right1 = (other->len == other->right1) ? right1 + other->right1 : other->right1;
         len += other->len;
-    }
-};
-
-struct Rev : public Lazytag {
-    bool rev;
-    Rev() : rev(0) {}
-    Rev(bool r) : rev(r) {}
-    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
-        auto other = dynamic_pointer_cast<Rev>(o);
-        other->rev ^= rev;
-        {   auto sp = dynamic_pointer_cast<SplayHandle>(h);
-            if (rev) sp->swap_child();
-        }   //Splay
-    }
-    void push(shared_ptr<Info> o, shared_ptr<Handle> h) override {}
-};
-
-struct Add : public Lazytag {
-    int add;
-    Add() : add(0) {}
-    Add(int a) : add(a) {}
-    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
-        auto other = dynamic_pointer_cast<Add>(o);
-        other->add += add;
-    }
-    void push(shared_ptr<Info> o, shared_ptr<Handle> h) override {
-        int size = 0;
-        {   auto sp = dynamic_pointer_cast<SplayHandle>(h);
-            if (sp) size = sp->size();
-        }   // Splay
-
-        {   auto other = dynamic_pointer_cast<Val>(o);
-            if (other) { other->val += add; }
-        }   // Val
-        {   auto other = dynamic_pointer_cast<Sum>(o);
-            if (other) { other->sum += add * size; }
-        }   // Sum
-    }
-};
-
-struct AddAndMul : public Lazytag {
-    int k, b;
-    AddAndMul() : k(1), b(0) {}
-    AddAndMul(int k, int b) : k(k), b(b) {}
-    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
-        auto other = dynamic_pointer_cast<AddAndMul>(o);
-        other->k *= k;
-        other->b *= k; other->b += b;
-    }
-    void push(shared_ptr<Info> o, shared_ptr<Handle> h) override {
-        int size = dynamic_pointer_cast<SplayHandle>(h)->size();
-        auto other = dynamic_pointer_cast<Sum>(o);
-        other->sum = (other->sum) * k + b;
     }
 };
 
@@ -222,30 +208,18 @@ TEST(SplayTest, BasicHandle) {
 
 TEST(SplayTest, StrongTestLongest1) {
     int n = 1000;
-    auto origin = mk::array(n, integer(0, 1));
-    auto arr = mk::array(n, 
-        option(
-            mk::tuple(character('A'), integer(1, n), integer(1, n))->after_generate([](shared_ptr<Tuple> tp)->void {
-                auto l = tp->get<Integer>(1); auto lv = l->get();
-                auto r = tp->get<Integer>(2); auto rv = r->get();
-                if (lv > rv) { l->set(rv); r->set(lv); }
-            }), 50,
-            mk::tuple(character('M'), integer(1, n), integer(0, 1)), 50
-        )
-    );
-    origin->generate(0, nullptr);
-    arr->generate(0, nullptr);
     vector<int> check; check.resize(n);
     auto splay = make_shared<Splay<Longest1>>();
     for (int i = 0; i < n; i++) {
-        check[i] = origin->get<Integer>(i)->get();
+        check[i] = rand_int(0, 1);
         splay->insert_after(i, Longest1(check[i]));
     }
     for (int i = 0; i < n; i++) {
-        char type = arr->get<Option>(i)->get<Tuple>()->get<Character>(0)->get();
-        if (type == 'A') {
-            int l = arr->get<Option>(i)->get<Tuple>()->get<Integer>(1)->get();
-            int r = arr->get<Option>(i)->get<Tuple>()->get<Integer>(2)->get();
+        char type = rand_int(0, 1);
+        if (type == 0) {
+            int l = rand_int(1, n);
+            int r = rand_int(1, n);
+            if (l > r) swap(l, r);
             int ans = 0, cur1 = 0;
             for (int j = l-1; j <= r-1; j++) {
                 if (check[j] == 1) cur1++;
@@ -253,8 +227,8 @@ TEST(SplayTest, StrongTestLongest1) {
             }
             ASSERT_EQ(splay->query_sum(l, r)->mxlen, ans);
         } else {
-            int pos = arr->get<Option>(i)->get<Tuple>()->get<Integer>(1)->get();
-            int to = arr->get<Option>(i)->get<Tuple>()->get<Integer>(2)->get();
+            int pos = rand_int(1, n);
+            int to = rand_int(0, 1);
             check[pos - 1] = to;
             splay->insert(pos, Longest1(to));
         }
@@ -263,34 +237,18 @@ TEST(SplayTest, StrongTestLongest1) {
 
 TEST(SplayTest, StrongTestRevAndXorAndMin) {
     int n = 1000;
-    auto origin = mk::array(n, integer(0, 100000));
-    auto arr = mk::array(n, 
-        option(
-            mk::tuple(character('A'), integer(1, n), integer(1, n))->after_generate([](shared_ptr<Tuple> tp)->void {
-                auto l = tp->get<Integer>(1); auto lv = l->get();
-                auto r = tp->get<Integer>(2); auto rv = r->get();
-                if (lv > rv) { l->set(rv); r->set(lv); }
-            }), 50,
-            mk::tuple(character('R'), integer(1, n), integer(1, n))->after_generate([](shared_ptr<Tuple> tp)->void {
-                auto l = tp->get<Integer>(1); auto lv = l->get();
-                auto r = tp->get<Integer>(2); auto rv = r->get();
-                if (lv > rv) { l->set(rv); r->set(lv); } 
-            }), 50
-        )
-    );
-    origin->generate(0, nullptr);
-    arr->generate(0, nullptr);
     vector<int> check; check.resize(n);
     auto splay = make_shared<Splay<XorSumAndMin, Rev>>();
     for (int i = 0; i < n; i++) {
-        check[i] = origin->get<Integer>(i)->get();
+        check[i] = rand_int(0, 100000);
         splay->insert_after(i, XorSumAndMin(check[i]));
     }
     for (int i = 0; i < n; i++) {
-        char type = arr->get<Option>(i)->get<Tuple>()->get<Character>(0)->get();
-        if (type == 'A') {
-            int l = arr->get<Option>(i)->get<Tuple>()->get<Integer>(1)->get();
-            int r = arr->get<Option>(i)->get<Tuple>()->get<Integer>(2)->get();
+        char type = rand_int(0, 1);
+        if (type == 0) {
+            int l = rand_int(1, n);
+            int r = rand_int(1, n);
+            if (l > r) swap(l, r);
             int ans = 0, mn = inf;
             for (int j = l-1; j <= r-1; j++) {
                 mn = min(mn, check[j]);
@@ -300,8 +258,9 @@ TEST(SplayTest, StrongTestRevAndXorAndMin) {
             ASSERT_EQ(q->mn, mn);
             ASSERT_EQ(q->sum, ans);
         } else {
-            int l = arr->get<Option>(i)->get<Tuple>()->get<Integer>(1)->get();
-            int r = arr->get<Option>(i)->get<Tuple>()->get<Integer>(2)->get();
+            int l = rand_int(1, n);
+            int r = rand_int(1, n);
+            if (l > r) swap(l, r);
             for (int j = l-1, k = r-1; j <= k; j++, k--) swap(check[j], check[k]); 
             splay->insert(l, r, Rev(true));
         }
