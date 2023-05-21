@@ -10,6 +10,8 @@ include_directories(../../include/AbStructure)
 include_directories(../../include/DtStructure)
 include_directories(../../include/Utility)
 
-aux_source_directory(. DTSTRUCTURE_SRC_LIST)
+# aux_source_directory(. DTSTRUCTURE_SRC_LIST)
+
+set(DTSTRUCTURE_SRC_LIST HashMap.cpp)
 
 add_library(${PROJECT_NAME} ${DTSTRUCTURE_SRC_LIST})

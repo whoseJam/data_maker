@@ -6,6 +6,7 @@
 #include "Debug.h"
 #include "Array.h"
 #include "Logger.h"
+#include "Node.h"
 
 using namespace std;
 
@@ -25,32 +26,33 @@ Array::Array(const Array& other) :
     callback_after_generate = other.callback_after_generate;
     if (!other.len) MESSAGE("Array", NEED("length"));
     if (!other.template_ele) MESSAGE("Array", NEED("fill"));
-    len = dynamic_pointer_cast<Integer>(other.len->clone());
-    template_ele = other.template_ele->clone();
+    len = dynamic_pointer_cast<Integer>(other.len->clone(0));
+    template_ele = other.template_ele->clone(0);
     for (auto ele : other.elements) 
-        elements.push_back(ele->clone());
+        elements.push_back(ele->clone(0));
 }
 
+static int array_cnt = 0;
 Array::~Array() {
-#ifdef OUTPUT_DELETER
-    cout << "delete array\n";
+#ifdef DELETE_CHECK
+    cout << "delete array " << ++array_cnt << "\n";
 #endif
 }
 
-shared_ptr<Array> Array::length(int len) {
+auto Array::length(int len) -> shared_ptr<Array> {
     CALL(FUNCTION);
     if (!this->len) this->len = make_shared<Integer>();
     this->len->value(len);
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-shared_ptr<Array> Array::length(shared_ptr<Integer> len) {
+auto Array::length(shared_ptr<Integer> len) -> shared_ptr<Array> {
     CALL(FUNCTION);
     this->len = len;
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-shared_ptr<Array> Array::fill(shared_ptr<Node> ele) {
+auto Array::fill(shared_ptr<Node> ele) -> shared_ptr<Array> {
     CALL(FUNCTION);
     this->template_ele = ele;
     return dynamic_pointer_cast<Array>(shared_from_this());
@@ -91,6 +93,7 @@ auto Array::length() -> int {
 
 auto Array::generate(bool re) -> void {
     CALL(FUNCTION);
+    GENERATE;
     if (generated && !re) return;
     generated = true;
     
@@ -101,9 +104,9 @@ auto Array::generate(bool re) -> void {
         callback_before_generate(
             dynamic_pointer_cast<Array>(shared_from_this()));
     len->generate(re);
-    for (int i = 1; i <= len->value(); i++)
-        elements.push_back(template_ele->clone());
-    for (int i = 0; i < elements.size(); i++) {
+    for (int i = 0; i < len->value(); i++) {
+        NodeMap::clear(NodeMap::CLONE_STAGE);
+        elements.push_back(template_ele->clone(1));
         elements[i]->generate(re);
         if (callback_when_generating)
             callback_when_generating(
@@ -160,6 +163,5 @@ void Array::out() {
     Formatable::parse(shared_from_this(), fmt, "Array");
 }
 
-shared_ptr<Array> array() { return make_shared<Array>(); }
-shared_ptr<Array> array(int n) { return make_shared<Array>()->length(n); }
+auto array() -> shared_ptr<Array> { return make_shared<Array>(); }
 }

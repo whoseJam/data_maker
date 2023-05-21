@@ -4,6 +4,7 @@
 
 #include "Debug.h"
 #include "Logger.h"
+#include "Node.h"
 #include "Operator.h"
 #include "Random.h"
 #include "Character.h"
@@ -23,12 +24,12 @@ Character::Character(const Character& other) :
     Node(other),
     Formatable(other) {
     CALL(FUNCTION);
-    if (other.l) l = dynamic_pointer_cast<Character>(other.l->clone());
-    if (other.r) r = dynamic_pointer_cast<Character>(other.r->clone());
-    if (other.op) op = dynamic_pointer_cast<Operator<Character>>(other.op->clone());
+    if (other.l) l = dynamic_pointer_cast<Character>(other.l->clone(0));
+    if (other.r) r = dynamic_pointer_cast<Character>(other.r->clone(0));
+    if (other.op) op = dynamic_pointer_cast<Operator<Character>>(other.op->clone(0));
     status = other.status;
     char_val = other.char_val;
-    if (other.ptr_val) ptr_val = dynamic_pointer_cast<Character>(other.ptr_val->clone());
+    if (other.ptr_val) ptr_val = dynamic_pointer_cast<Character>(other.ptr_val->clone(0));
     fmt = other.fmt;
 }
 
@@ -110,6 +111,7 @@ auto Character::value(shared_ptr<Character> val) -> shared_ptr<Character> {
 
 void Character::generate(bool re) {
     CALL(FUNCTION);
+    GENERATE;
     if (generated && !re) return;
     generated = true;
     

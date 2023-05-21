@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace Random {
-    #define C_RANDOM
+    #define CPP_RANDOM
     bool inited = false;
     std::random_device rd;
 

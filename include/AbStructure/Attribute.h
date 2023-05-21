@@ -14,45 +14,32 @@ namespace mk {
 
 class Attribute : 
     public Node,
-    public Hashable,
     public Formatable {
 public:
     Attribute();
     Attribute(const Attribute& other);
     virtual ~Attribute();
-    std::shared_ptr<Attribute> name(const std::string& name);
-    CL_UPDATE_FUNC(Attribute, value, val, UF_assign, CK_base_is(Node), );
+    auto name(const std::string& name) -> std::shared_ptr<Attribute>;
+    auto value(std::shared_ptr<Node> val) -> std::shared_ptr<Attribute>;
     
     template<typename T>
     std::shared_ptr<T> get() {
         return std::dynamic_pointer_cast<T>(val);
     }
-    std::string get_name();
+    auto name() -> std::string;
 
-    virtual void generate(bool re, std::shared_ptr<Node> from) override;
-    virtual std::shared_ptr<Node> clone() override;
+    virtual void generate(bool re) override;
+    virtual std::shared_ptr<Node> clone(bool first) override;
 
-    virtual bool equal(std::shared_ptr<Hashable> other) override;
-    virtual uint hash_code() override;
-
-    virtual void parse(const std::string& spec, int n, ...);
+    virtual void parse(const std::string& spec, int n, ...) override;
     virtual void out() override;
 private:
     std::shared_ptr<Node> val;
     std::string key;
 };
 
-std::shared_ptr<Attribute> attr();
-    
-template<typename T, typename CHECKER = 
-    std::enable_if_t<
-        std::is_base_of_v<
-            Node,
-            shared_ptr_t<std::decay_t<T>>>>>
-std::shared_ptr<Attribute> attr(const std::string& name, T&& val) {
-    return std::make_shared<Attribute>()
-    ->name(name)->value(val);
-}
+auto attr() -> std::shared_ptr<Attribute>;
+auto attr(const std::string& key, std::shared_ptr<Node> val) -> std::shared_ptr<Attribute>;
 }
 
 #endif

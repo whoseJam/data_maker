@@ -1,11 +1,17 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <cstddef>
 #include <map>
 #include <list>
 #include <memory>
 
 namespace mk {
+
+#define GENERATE \
+    NodeMap::insert(NodeMap::GENERATE_STAGE, this->origin, std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
+    defer(NodeMap::remove(NodeMap::GENERATE_STAGE, this->origin));
+#define CLONE_FIRST 
 
 #define BUILD(ele) \
     ele->generate(0);
@@ -15,33 +21,18 @@ namespace mk {
 
 class Node;
 
-class Tracker {
-public:
-    static Tracker* get();
-    void track_on(void* origin, std::shared_ptr<Node> cur);
-    std::shared_ptr<Node> find(void* origin);
-private:
-    Tracker() = default;
-    static Tracker instance;
-    std::map<void*, std::shared_ptr<Node>> memory;
+namespace NodeMap {
+enum {
+    GENERATE_STAGE,     // 存储开始generate的node的origin->value的映射关系
+    CLONE_FIRST_STAGE,  // 存储clone(first = true)的那个元素的origin->value的映射关系
+    CLONE_STAGE,        // 存储clone过程中，每个node的origin->value的映射关系（用于实现clone-on-first）
+    TRACK_STAGE,        // 存储整个过程每一个node的origin->value的映射关系
 };
-
-class Clone {
-public:
-    static Clone* get();
-    void enter(std::shared_ptr<Node> ptr);
-    void exit();
-    bool check_stay_with(void* ptr);
-    std::shared_ptr<Node> check(void* ptr);
-    void insert(void*, std::shared_ptr<Node> ptr);
-private:
-    Clone() = default;
-    
-    static Clone instance;
-    std::map<void*, std::shared_ptr<Node>> helper;
-    std::map<void*, int> cnt;
-    std::list<void*> stack;
-};
+auto insert(int type, void* ptr, std::shared_ptr<Node>) -> void;
+auto remove(int type, void* ptr) -> void;
+auto clear(int type) -> void;
+auto get(int type, void* ptr) -> std::shared_ptr<Node>; 
+}
 
 class Node {
 public:
@@ -49,40 +40,65 @@ public:
     Node(const Node& other);
     virtual ~Node();
     virtual void generate(bool re) = 0;
-    virtual std::shared_ptr<Node> clone() = 0;
+    virtual std::shared_ptr<Node> clone(bool first) = 0;
     
-    void keep_track();
     void live_with(std::shared_ptr<Node> prt);
     static std::shared_ptr<Node> track(std::shared_ptr<Node> origin);
 public:
+    bool debug;
     bool generated;
     void* parent;
     void* origin;
 };
 
+template<typename T>
+auto track(std::shared_ptr<Node> node) -> std::shared_ptr<T> {
+    return std::dynamic_pointer_cast<T>(NodeMap::get(NodeMap::TRACK_STAGE, node->origin));
+}
+/*
+this: parent在generate中出现.
+第一次clone，之后this: parent指向clone(first=true).
+clone: 上述情况都不满足.
+*/
+
+
 #define CL_CLONE(class) \
-    auto class::clone() -> std::shared_ptr<Node> { \
+    auto class::clone(bool first) -> std::shared_ptr<Node> { \
         CALL(FUNCTION); \
-        Clone::get()->enter(std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
-        struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
-        auto only_clone_once = Clone::get()->check_stay_with(this->parent); \
-        if (only_clone_once && Clone::get()->check(this)) return Clone::get()->check(this); \
+        NodeMap::insert(NodeMap::CLONE_FIRST_STAGE, (first ? this->origin : nullptr), std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
+        auto parent = NodeMap::get(NodeMap::GENERATE_STAGE, this->parent); \
+        if (parent) return std::dynamic_pointer_cast<Node>(this->shared_from_this()); \
+        parent = NodeMap::get(NodeMap::CLONE_FIRST_STAGE, this->parent); \
+        if (parent) { \
+            auto first_clone = NodeMap::get(NodeMap::CLONE_STAGE, this->origin); \
+            if (first_clone) return first_clone; \
+            first_clone = std::make_shared<class>(*this); \
+            NodeMap::insert(NodeMap::TRACK_STAGE, this->origin, first_clone); \
+            NodeMap::insert(NodeMap::CLONE_STAGE, this->origin, first_clone); \
+            return first_clone; \
+        } \
         auto ans = std::make_shared<class>(*this); \
-        if (only_clone_once) Clone::get()->insert(this, ans); \
-        if (this->origin) Tracker::get()->track_on(this->origin, ans); \
+        NodeMap::insert(NodeMap::TRACK_STAGE, this->origin, ans); \
         return ans; \
     }
 
 #define CL_CLONE_IN_CLASS(class) \
-    virtual auto clone() -> std::shared_ptr<Node> { \
+    virtual auto clone(bool first) -> std::shared_ptr<Node> { \
         CALL(FUNCTION); \
-        Clone::get()->enter(std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
-        struct CloneGuard { ~CloneGuard() {Clone::get()->exit();}} cg; \
-        auto only_clone_once = Clone::get()->check_stay_with(this->parent); \
-        if (only_clone_once && Clone::get()->check(this)) return Clone::get()->check(this); \
+        NodeMap::insert(NodeMap::CLONE_FIRST_STAGE, (first ? this->origin : nullptr), std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
+        auto parent = NodeMap::get(NodeMap::GENERATE_STAGE, this->parent); \
+        if (parent) return std::dynamic_pointer_cast<Node>(this->shared_from_this()); \
+        parent = NodeMap::get(NodeMap::CLONE_FIRST_STAGE, this->parent); \
+        if (parent) { \
+            auto first_clone = NodeMap::get(NodeMap::CLONE_STAGE, this->origin); \
+            if (first_clone) return first_clone; \
+            first_clone = std::make_shared<class>(*this); \
+            NodeMap::insert(NodeMap::TRACK_STAGE, this->origin, first_clone); \
+            NodeMap::insert(NodeMap::CLONE_STAGE, this->origin, first_clone); \
+            return first_clone; \
+        } \
         auto ans = std::make_shared<class>(*this); \
-        if (only_clone_once) Clone::get()->insert(this, ans); \
-        if (this->origin) Tracker::get()->track_on(this->origin, ans); \
+        NodeMap::insert(NodeMap::TRACK_STAGE, this->origin, ans); \
         return ans; \
     }
 }

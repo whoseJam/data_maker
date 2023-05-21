@@ -1,11 +1,15 @@
 
+#include <functional>
 #include <iostream>
+#include <memory>
 
-#include "Clone.h"
+#include "Node.h"
 #include "Tuple.h"
 #include "Debug.h"
 
 using namespace std;
+
+namespace mk {
 
 Tuple::Tuple() {
     CALL(FUNCTION);
@@ -16,10 +20,11 @@ Tuple::Tuple(const Tuple& other) :
     Node(other),
     Formatable(other) {
     CALL(FUNCTION);
-    callback_when_generating_per_element = other.callback_when_generating_per_element;
+    callback_before_generate = other.callback_before_generate;
+    callback_when_generating = other.callback_when_generating;
     callback_after_generate = other.callback_after_generate;
     for (auto ele : other.elements) 
-        elements.push_back(ele->clone());
+        elements.push_back(ele->clone(0));
 }
 
 Tuple::~Tuple() {
@@ -28,36 +33,55 @@ Tuple::~Tuple() {
 #endif
 }
 
-shared_ptr<Tuple> Tuple::format(const string& fmt) {
+auto Tuple::append(shared_ptr<Node> ele) -> shared_ptr<Tuple> {
     CALL(FUNCTION);
-    this->fmt = fmt;
+    elements.push_back(ele);
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
-shared_ptr<Tuple> Tuple::when_generating_per_element(
-    function<void(shared_ptr<Tuple>, int)> callback) {
+auto Tuple::before_generate(
+    function<void(shared_ptr<Tuple>)> callback) -> shared_ptr<Tuple> {
     CALL(FUNCTION);
-    callback_when_generating_per_element = callback;
+    callback_before_generate = callback;
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
-shared_ptr<Tuple> Tuple::after_generate(
-    function<void(shared_ptr<Tuple>)> callback) {
+auto Tuple::when_generating(
+    function<void(shared_ptr<Tuple>, int)> callback) -> shared_ptr<Tuple> {
+    CALL(FUNCTION);
+    callback_when_generating = callback;
+    return dynamic_pointer_cast<Tuple>(shared_from_this());
+}
+
+auto Tuple::after_generate(
+    function<void(shared_ptr<Tuple>)> callback) -> shared_ptr<Tuple> {
     CALL(FUNCTION);
     callback_after_generate = callback;
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
-void Tuple::generate(bool re, shared_ptr<Node> from) {
+auto Tuple::format(const string& fmt) -> shared_ptr<Tuple> {
     CALL(FUNCTION);
-    from_node = from;
+    this->fmt = fmt;
+    return dynamic_pointer_cast<Tuple>(shared_from_this());
+}
+
+extern bool gdebug;
+auto Tuple::generate(bool re) -> void {
+    CALL(FUNCTION);
+    gdebug = true;
+    GENERATE;
+    gdebug = false;
     if (generated && !re) return;
     generated = true;
 
+    if (callback_before_generate)
+        callback_before_generate(
+            dynamic_pointer_cast<Tuple>(shared_from_this()));
     for (int i = 0; i < elements.size(); i++) {
-        elements[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
-        if (callback_when_generating_per_element)
-            callback_when_generating_per_element(
+        elements[i]->generate(re);
+        if (callback_when_generating)
+            callback_when_generating(
                 dynamic_pointer_cast<Tuple>(shared_from_this()), i);
     }
     if (callback_after_generate)
@@ -66,29 +90,6 @@ void Tuple::generate(bool re, shared_ptr<Node> from) {
 }
 
 CL_CLONE(Tuple);
-
-bool Tuple::equal(shared_ptr<Hashable> o) {
-    CALL(FUNCTION);
-    shared_ptr<Tuple> other = dynamic_pointer_cast<Tuple>(o);
-    if (!other) return false;
-    if (elements.size() != other->elements.size()) return false;
-    for (int i = 0; i < elements.size(); i++) {
-        shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
-        shared_ptr<Hashable> b = dynamic_pointer_cast<Hashable>(other->elements[i]);
-        if (!a->equal(b)) return false;
-    }
-    return true;
-}
-
-uint Tuple::hash_code() {
-    CALL(FUNCTION);
-    uint ans = elements.size();
-    for (int i = 0; i < elements.size(); i++) {
-        shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(elements[i]);
-        ans = ans * 17 + a->hash_code();
-    }
-    return ans;
-}
 
 void Tuple::iter_reset() {
     CALL(FUNCTION);
@@ -132,4 +133,30 @@ void Tuple::parse(const string& spec, int n, ...) {
 void Tuple::out() {
     CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Tuple");
+}
+
+auto tuple() -> shared_ptr<Tuple> {
+    return make_shared<Tuple>();
+}
+
+auto tuple(shared_ptr<Node> a) -> shared_ptr<Tuple> {
+    return tuple()->append(a);
+}
+
+auto tuple(shared_ptr<Node> a, shared_ptr<Node> b) -> shared_ptr<Tuple> {
+    return tuple(a)->append(b);
+}
+
+auto tuple(shared_ptr<Node> a, shared_ptr<Node> b, shared_ptr<Node> c) -> shared_ptr<Tuple> {
+    return tuple(a, b)->append(c);
+}
+
+auto tuple(shared_ptr<Node> a, shared_ptr<Node> b, shared_ptr<Node> c, shared_ptr<Node> d) -> shared_ptr<Tuple> {
+    return tuple(a, b, c)->append(d);
+}
+
+auto tuple(shared_ptr<Node> a, shared_ptr<Node> b, shared_ptr<Node> c, shared_ptr<Node> d, shared_ptr<Node> e) -> shared_ptr<Tuple> {
+    return tuple(a, b, c, d)->append(e);
+}
+
 }

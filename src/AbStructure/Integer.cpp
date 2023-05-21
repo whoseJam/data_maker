@@ -23,12 +23,13 @@ Integer::Integer(const Integer& other) :
     Node(other),
     Formatable(other) {
     CALL(FUNCTION);
-    if (other.l) l = dynamic_pointer_cast<Integer>(other.l->clone());
-    if (other.r) r = dynamic_pointer_cast<Integer>(other.r->clone());
-    if (other.op) op = dynamic_pointer_cast<Operator<Integer>>(other.op->clone());
+    if (other.l) l = dynamic_pointer_cast<Integer>(other.l->clone(0));
+    if (other.r) r = dynamic_pointer_cast<Integer>(other.r->clone(0));
+    if (other.op) op = dynamic_pointer_cast<Operator<Integer>>(other.op->clone(0));
     status = other.status;
     int_val = other.int_val;
-    if (other.ptr_val) ptr_val = dynamic_pointer_cast<Integer>(other.ptr_val->clone());
+    if (debug) cout<<"Clone Len\n";
+    if (other.ptr_val) ptr_val = dynamic_pointer_cast<Integer>(other.ptr_val->clone(0));
     fmt = other.fmt;
 }
 
@@ -111,6 +112,7 @@ auto Integer::value(shared_ptr<Integer> val) -> shared_ptr<Integer> {
 
 void Integer::generate(bool re) {
     CALL(FUNCTION);
+    GENERATE;
     if (generated && !re) return;
     generated = true;
     

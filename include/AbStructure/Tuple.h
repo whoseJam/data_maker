@@ -12,19 +12,20 @@
 #include "Format.h"
 #include "HashMap.h"
 
+namespace mk {
+
 class Tuple : 
     public Node, 
-    public Hashable,
     public Iterable,
     public Formatable {
 public:
     Tuple();
     Tuple(const Tuple& other);
     virtual ~Tuple();
-    CL_UPDATE_FUNC(Tuple, append, elements, UF_append_vector, CK_base_is(Node), );
-    CL_UPDATE_FUNC(Tuple, unshift, elements, UF_unshift_vector, CK_base_is(Node), );
+    auto append(std::shared_ptr<Node> ele) -> std::shared_ptr<Tuple>;
     auto format(const std::string& fmt) -> std::shared_ptr<Tuple>;
-    auto when_generating_per_element(std::function<void(std::shared_ptr<Tuple>, int)>) -> std::shared_ptr<Tuple>;
+    auto before_generate(std::function<void(std::shared_ptr<Tuple>)>) -> std::shared_ptr<Tuple>;
+    auto when_generating(std::function<void(std::shared_ptr<Tuple>, int)>) -> std::shared_ptr<Tuple>;
     auto after_generate(std::function<void(std::shared_ptr<Tuple>)>) -> std::shared_ptr<Tuple>;
 
     template<typename T>
@@ -35,22 +36,20 @@ public:
         return ans;
     }
 
-    virtual void generate(bool re, std::shared_ptr<Node> from) override;
-    virtual std::shared_ptr<Node> clone() override;
-    virtual void out() override;
+    virtual auto generate(bool re) -> void override;
+    virtual auto clone(bool first) -> std::shared_ptr<Node> override;
 
-    virtual bool equal(std::shared_ptr<Hashable> other) override;
-    virtual uint hash_code() override;
-
-    virtual void iter_reset() override;
-    virtual void iter_next() override;
-    virtual bool iter_loop_finish() override;
-    virtual bool iter_at_last() override;
+    virtual auto iter_reset() -> void override;
+    virtual auto iter_next() -> void override;
+    virtual auto iter_loop_finish() -> bool override;
+    virtual auto iter_at_last() -> bool override;
     
     virtual void parse(const std::string& specifier, int n, ...) override;
+    virtual void out() override;
 private:
 //  callback
-    std::function<void(std::shared_ptr<Tuple>, int)> callback_when_generating_per_element;
+    std::function<void(std::shared_ptr<Tuple>)> callback_before_generate;
+    std::function<void(std::shared_ptr<Tuple>, int)> callback_when_generating;
     std::function<void(std::shared_ptr<Tuple>)> callback_after_generate;
 
 //  define stage
@@ -60,50 +59,12 @@ private:
     int cur_iter;
 };
 
-namespace mk {
-    template<typename A, typename CHECKER = 
-        std::enable_if_t<
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<A>>>>>
-    std::shared_ptr<Tuple> tuple(A&& a) {
-        return std::make_shared<Tuple>()
-            ->append(std::forward<A>(a));
-    }
-
-    template<typename A, typename B, typename CHECKER = 
-        std::enable_if_t<
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<A>>> &&
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<B>>>>>
-    std::shared_ptr<Tuple> tuple(A&& a, B&& b) {
-        return std::make_shared<Tuple>()
-            ->append(std::forward<A>(a))
-            ->append(std::forward<B>(b));
-    }
-
-    template<typename A, typename B, typename C, typename CHECKER = 
-        std::enable_if_t<
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<A>>> &&
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<B>>> && 
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<C>>>>>
-    std::shared_ptr<Tuple> tuple(A&& a, B&& b, C&& c) {
-        return std::make_shared<Tuple>()
-            ->append(std::forward<A>(a))
-            ->append(std::forward<B>(b))
-            ->append(std::forward<C>(c));
-    }
-
-    template<typename A, typename B, typename C, typename D, typename CHECKER = 
-        std::enable_if_t<
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<A>>> &&
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<B>>> && 
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<C>>> &&
-            std::is_base_of_v<Node, shared_ptr_t<std::decay_t<D>>>>>
-    std::shared_ptr<Tuple> tuple(A&& a, B&& b, C&& c, D&& d) {
-        return std::make_shared<Tuple>()
-            ->append(std::forward<A>(a))
-            ->append(std::forward<B>(b))
-            ->append(std::forward<C>(c))
-            ->append(std::forward<D>(d));
-    }
+auto tuple() -> std::shared_ptr<Tuple>;
+auto tuple(std::shared_ptr<Node>) -> std::shared_ptr<Tuple>;
+auto tuple(std::shared_ptr<Node>, std::shared_ptr<Node>) -> std::shared_ptr<Tuple>;
+auto tuple(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>) -> std::shared_ptr<Tuple>;
+auto tuple(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>) -> std::shared_ptr<Tuple>;
+auto tuple(std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>, std::shared_ptr<Node>) -> std::shared_ptr<Tuple>;
 }
 
 #endif

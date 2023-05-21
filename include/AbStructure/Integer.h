@@ -31,7 +31,7 @@ public:
     auto value(std::shared_ptr<Integer> val) -> std::shared_ptr<Integer>;
 
     virtual auto generate(bool re) -> void override;
-    virtual auto clone() -> std::shared_ptr<Node> override;
+    virtual auto clone(bool first) -> std::shared_ptr<Node> override;
 
     virtual auto parse(const std::string& spec, int n, ...) -> void override;
     virtual auto out() -> void override;

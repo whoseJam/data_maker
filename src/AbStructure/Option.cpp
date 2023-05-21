@@ -3,6 +3,8 @@
 
 using namespace std;
 
+namespace mk {
+
 Option::Option() {
     fmt = "$x";
 }
@@ -10,10 +12,10 @@ Option::Option() {
 Option::Option(const Option& other) :
     Node(other),
     Formatable(other) {
-    if (other.result) result = other.result->clone();
+    if (other.result) result = other.result->clone(0);
     for (int i = 0; i < other.opts.size(); i++) {
-        opts.push_back(other.opts[i]->clone());
-        robin.push_back(dynamic_pointer_cast<Integer>(other.robin[i]->clone()));
+        opts.push_back(other.opts[i]->clone(0));
+        robin.push_back(dynamic_pointer_cast<Integer>(other.robin[i]->clone(0)));
     }
 }
 
@@ -31,15 +33,14 @@ shared_ptr<Option> Option::add_option(shared_ptr<Node> opt, shared_ptr<Integer> 
     return dynamic_pointer_cast<Option>(shared_from_this());
 }
 
-void Option::generate(bool re, shared_ptr<Node> from) {
+void Option::generate(bool re) {
     CALL(FUNCTION);
-    from_node = from;
     if (generated && !re) return;
     generated = true;
 
     for (int i = 0; i < robin.size(); i++) {
-        opts[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
-        robin[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
+        opts[i]->generate(re);
+        robin[i]->generate(re);
     }
 }
 
@@ -69,8 +70,8 @@ void Option::out() {
     Formatable::parse(shared_from_this(), fmt, "Option");
 }
 
-namespace mk {
-    shared_ptr<Option> option() {
-        return make_shared<Option>();
-    }
+shared_ptr<Option> option() {
+    return make_shared<Option>();
+}
+
 }

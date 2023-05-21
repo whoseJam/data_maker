@@ -11,7 +11,6 @@
 #include "Format.h"
 #include "Logger.h"
 #include "Integer.h"
-#include "HashMap.h"
 
 namespace mk {
 
@@ -42,7 +41,7 @@ public:
     }
 
     virtual void generate(bool re) override;
-    virtual std::shared_ptr<Node> clone() override;
+    virtual std::shared_ptr<Node> clone(bool first) override;
 
     virtual void iter_reset() override;
     virtual void iter_next() override;
@@ -61,7 +60,7 @@ private:
     int cur_iter;
 };
 
-std::shared_ptr<Array> array();
+auto array() -> std::shared_ptr<Array>;
 
 template<typename T, typename CHECKER = 
     std::enable_if_t<

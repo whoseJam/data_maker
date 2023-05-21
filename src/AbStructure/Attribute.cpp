@@ -1,12 +1,16 @@
 
 #include <iostream>
+#include <memory>
+#include <type_traits>
 
 #include "Debug.h"
-#include "Clone.h"
 #include "Logger.h"
 #include "Attribute.h"
+#include "Node.h"
 
 using namespace std;
+
+namespace mk {
 
 Attribute::Attribute() {
     CALL(FUNCTION);
@@ -18,58 +22,58 @@ Attribute::Attribute(const Attribute& other) :
     CALL(FUNCTION);
     if (!other.val) MESSAGE("Attribute", NEED("value"));
     key = other.key;
-    val = other.val->clone();
+    val = other.val->clone(0);
 }
 
 Attribute::~Attribute() {
-#ifdef OUTPUT_DELETER
+#ifdef DELETE_CHECK
     cout << "delete attribute\n";
 #endif
 }
 
+/*
+Description:
+设置该属性的name.
+*/
 shared_ptr<Attribute> Attribute::name(const std::string& name) {
     CALL(FUNCTION);
     key = name;
     return dynamic_pointer_cast<Attribute>(shared_from_this());
 }
 
-string Attribute::get_name() {
+/*
+Description:
+设置该属性的value.
+*/
+auto Attribute::value(shared_ptr<Node> val) -> shared_ptr<Attribute> {
+    CALL(FUNCTION);
+    this->val = val;
+    return dynamic_pointer_cast<Attribute>(shared_from_this());
+}
+
+/*
+Description:
+获取该属性的name.
+*/
+auto Attribute::name() -> string {
     CALL(FUNCTION);
     return key;
 }
 
-void Attribute::generate(bool re, shared_ptr<Node> from) {
+auto Attribute::generate(bool re) -> void {
     CALL(FUNCTION);
-    from_node = from;
+    GENERATE;
     if (generated && !re) return;
     generated = true;
     
     if (!val) MESSAGE("Attribute", NEED("value"));
     if (key == "UNSET") MESSAGE("Attribute", NEED("name"));
-    val->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
+    val->generate(re);
 }
 
 CL_CLONE(Attribute);
 
-bool Attribute::equal(shared_ptr<Hashable> o) {
-    CALL(FUNCTION);
-    shared_ptr<Attribute> other = dynamic_pointer_cast<Attribute>(o);
-    if (!other) return false;
-    shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(val);
-    shared_ptr<Hashable> b = dynamic_pointer_cast<Hashable>(other->val);
-    if (!a || !b) MESSAGE("Attribute", UNEXCEPT);
-    return a->equal(b);
-}
-
-uint Attribute::hash_code() {
-    CALL(FUNCTION);
-    shared_ptr<Hashable> a = dynamic_pointer_cast<Hashable>(val);
-    if (!a) MESSAGE("Attribute", UNEXCEPT);
-    return a->hash_code();
-}
-
-void Attribute::parse(const string& spec, int n, ...) {
-    
+void Attribute::parse(const string& spec, int n, ...) {   
 }
 
 void Attribute::out() {
@@ -77,8 +81,20 @@ void Attribute::out() {
     dynamic_pointer_cast<Formatable>(val)->out();
 }
 
-namespace mk {
-    shared_ptr<Attribute> attr() {
-        return make_shared<Attribute>();
-    }
+/*
+Description:
+构造一个空属性.
+*/
+auto attr() -> shared_ptr<Attribute> {
+    return make_shared<Attribute>();
+}
+
+/*
+Description:
+构造一个名为name，值为value的属性.
+*/
+auto attr(const string& key, shared_ptr<Node> val) -> shared_ptr<Attribute> {
+    return attr()->name(key)->value(val);
+}
+
 }

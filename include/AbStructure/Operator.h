@@ -47,6 +47,7 @@ public:
     CL_CLONE_IN_CLASS(AddOperator<I>);
     virtual auto generate(bool re) -> void {
         CALL(FUNCTION);
+        GENERATE;
         if (this->generated && !re) return;
         this->generated = true;
         lc->generate(re);
@@ -86,6 +87,7 @@ public:
     CL_CLONE_IN_CLASS(SubOperator<I>);
     virtual auto generate(bool re) -> void {
         CALL(FUNCTION);
+        GENERATE;
         if (this->generated && !re) return;
         this->generated = true;
         lc->generate(re);
@@ -114,6 +116,7 @@ public:
     MulOperator() = default;
     MulOperator(const MulOperator<I> & other) {
         CALL(FUNCTION);
+        GENERATE;
         if (!other.lc) MESSAGE("MulOperator<I>", NEED("lvalue"));
         if (!other.rc) MESSAGE("MulOperator<I>", NEED("rvalue"));
         this->lc = std::dynamic_pointer_cast<I>(other.lc->clone());

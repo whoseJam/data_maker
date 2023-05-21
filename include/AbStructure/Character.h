@@ -29,7 +29,7 @@ public:
     auto value(std::shared_ptr<Character> val) -> std::shared_ptr<Character>;
 
     virtual void generate(bool re) override;
-    virtual std::shared_ptr<Node> clone() override;
+    virtual std::shared_ptr<Node> clone(bool first) override;
     
     virtual void parse(const std::string& spec, int n, ...) override;
     virtual void out() override;

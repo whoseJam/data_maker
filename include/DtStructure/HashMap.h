@@ -27,7 +27,8 @@ private:
     int total;
 };
 
-std::shared_ptr<HashMap> hash_map();
+auto hash_map() -> std::shared_ptr<HashMap> ;
+
 }
 
 #endif
