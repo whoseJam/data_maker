@@ -10,12 +10,15 @@ class Lazytag;
 class Mergeable;
 class Info;
 
+class Empty {
+public:
+};
+
 class Handle {
 public:
-    Handle(const std::string& name);
+    Handle() = default;
     virtual ~Handle() = default;
 private:
-    std::string type;
 };
 
 class Pushable {
@@ -35,7 +38,7 @@ class Mergeable : public Info {
 public:
     Mergeable() = default;
     virtual ~Mergeable() = default;
-    virtual void merge(std::shared_ptr<Mergeable> other) = 0;
+    virtual auto merge(std::shared_ptr<Mergeable> other) -> void = 0;
 };
 
 class Lazytag : public Pushable {

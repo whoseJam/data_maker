@@ -20,7 +20,7 @@ struct Add : public Lazytag {
     Add(int a) : add(a) {}
     void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
         auto other = dynamic_pointer_cast<Add>(o);
-        other->add += add;
+        add += other->add;
     }
 };
 
@@ -41,10 +41,9 @@ struct Rev : public Lazytag {
     Rev(bool r) : rev(r) {}
     void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
         auto other = dynamic_pointer_cast<Rev>(tag);
-        other->rev ^= rev;
-        {   auto sp = dynamic_pointer_cast<SplayHandle>(handle);
-            if (rev) sp->swap_child();
-        }   //Splay
+        rev ^= other->rev;
+        auto sp = dynamic_pointer_cast<SplayHandle>(handle);
+        if (other->rev) sp->swap_child();
     }
 };
 
@@ -59,10 +58,13 @@ struct Int : public Comparable {
     }
 };
 
-struct Val : public Info {
+struct Val : public Info, public Pushable {
     int val;
     Val() : val(0) {}
     Val(int v) : val(v) {}
+    void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
+        val += dynamic_pointer_cast<Add>(tag)->add;
+    }
 };
 
 struct Sum : public Mergeable, public Pushable {
@@ -73,7 +75,7 @@ struct Sum : public Mergeable, public Pushable {
         auto other = dynamic_pointer_cast<Sum>(o);
         sum += other->sum;
     }
-    virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) {
+    void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
         auto hd = dynamic_pointer_cast<SplayHandle>(handle);
         auto add_tag = dynamic_pointer_cast<Add>(tag);
         sum += hd->size() * add_tag->add;
@@ -111,7 +113,7 @@ TEST(SplayTest, BasicInsert) {
     auto splay = make_shared<Splay<Sum>>();
     splay->insert_after(0, Sum(1));     // [1]
     splay->insert_after(0, Sum(2));     // [2, 1]
-    ASSERT_EQ(splay->query_sum(1, 1)->sum, 2);
+    ASSERT_EQ(splay->query_sum(1, 1)->sum, 2);    
     ASSERT_EQ(splay->query_sum(2, 2)->sum, 1);
     ASSERT_EQ(splay->query_sum(1, 2)->sum, 3);
     splay->insert_after(2, Sum(3));     // [2, 1, 3]
@@ -244,7 +246,7 @@ TEST(SplayTest, StrongTestRevAndXorAndMin) {
         splay->insert_after(i, XorSumAndMin(check[i]));
     }
     for (int i = 0; i < n; i++) {
-        char type = rand_int(0, 1);
+        int type = rand_int(0, 1);
         if (type == 0) {
             int l = rand_int(1, n);
             int r = rand_int(1, n);
