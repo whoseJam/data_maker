@@ -1,12 +1,14 @@
 
 #include <iostream>
 
-#include "Clone.h"
 #include "Debug.h"
+#include "Node.h"
 #include "Vertex.h"
 #include "Logger.h"
 
 using namespace std;
+
+namespace mk {
 
 Vertex::Vertex() {
     CALL(FUNCTION);
@@ -21,7 +23,7 @@ Vertex::Vertex(const Vertex& other) :
     for (int i = 0; i < other.attrs.size(); i++)
         attrs.push_back(
             dynamic_pointer_cast<Attribute>(
-                other.attrs[i]->clone()));
+                other.attrs[i]->clone(0)));
     
     fmt = other.fmt;
 }
@@ -46,7 +48,7 @@ int Vertex::get() {
 shared_ptr<Attribute> Vertex::get(const std::string& name) {
     CALL(FUNCTION);
     for (int i = 0; i < attrs.size(); i++)
-        if (attrs[i]->get_name() == name)
+        if (attrs[i]->name() == name)
             return attrs[i];
     return nullptr;
 }
@@ -56,14 +58,14 @@ void Vertex::set(int idx) {
     this->idx = idx;
 }
 
-void Vertex::generate(bool re, shared_ptr<Node> from) {
+void Vertex::generate(bool re) {
     CALL(FUNCTION);
-    from_node = from;
+    GENERATE;
     if (generated) return;
     generated = true;
 
     for (int i = 0; i < attrs.size(); i++)
-        attrs[i]->generate(re, dynamic_pointer_cast<Node>(shared_from_this()));
+        attrs[i]->generate(re);
 }
 
 CL_CLONE(Vertex);
@@ -71,28 +73,6 @@ CL_CLONE(Vertex);
 void Vertex::out() {
     CALL(FUNCTION);
     Formatable::parse(shared_from_this(), fmt, "Vertex");
-}
-
-bool Vertex::equal(shared_ptr<Hashable> o) {
-    CALL(FUNCTION);
-    shared_ptr<Vertex> other = dynamic_pointer_cast<Vertex>(o);
-    if (!other) return false;
-    if (attrs.size() != other->attrs.size()) return false;
-    if (idx != other->idx) return false;
-    for (int i = 0; i < attrs.size(); i++) {
-        shared_ptr<Hashable> a = attrs[i];
-        shared_ptr<Hashable> b = other->attrs[i];
-        if (!a->equal(b)) return false;
-    }
-    return true;
-}
-
-uint Vertex::hash_code() {
-    CALL(FUNCTION);
-    uint ans = idx;
-    for (int i = 0; i < attrs.size(); i++) {
-        ans = ans * 17 + attrs[i]->hash_code();
-    } return ans;
 }
 
 void Vertex::parse(const string& spec, int n, ...) {
@@ -108,7 +88,7 @@ void Vertex::parse(const string& spec, int n, ...) {
             else if (n == 1) {
                 string attr_name = va_arg(valist, char*);
                 for (int i = 0; i < attrs.size(); i++) {
-                    if (attrs[i]->get_name() == attr_name) {
+                    if (attrs[i]->name() == attr_name) {
                         attrs[i]->out();
                     }
                 }
@@ -120,8 +100,8 @@ void Vertex::parse(const string& spec, int n, ...) {
     }
 }
 
-namespace mk {
-    shared_ptr<Vertex> vertex() {
-        return make_shared<Vertex>();
-    }
+shared_ptr<Vertex> vertex() {
+    return make_shared<Vertex>();
+}
+
 }

@@ -1,5 +1,4 @@
 
-#include "gtest/gtest.h"
 #include <assert.h>
 #include <gtest.h>
 #include <memory>
@@ -15,9 +14,11 @@ struct Add : public Lazytag {
     int add;
     Add() : add(0) {}
     Add(int a) : add(a) {}
-    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
-        auto other = dynamic_pointer_cast<Add>(o);
-        other->add += add;
+    virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
+        auto add_tag = dynamic_pointer_cast<Add>(tag);
+        if (add_tag) {
+            add += add_tag->add;
+        }
     }
 };
 
@@ -27,8 +28,9 @@ struct Val : public Info, public Pushable {
     Val(int v) : val(v) {}
     virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
         auto add_tag = dynamic_pointer_cast<Add>(tag);
-        val += add_tag->add;
-
+        if (add_tag) {
+            val += add_tag->add;
+        }
     }
 };
 
@@ -37,14 +39,18 @@ struct Sum : public Mergeable, public Pushable {
     int sum;
     Sum() : sum(0) {}
     Sum(int s) : sum(s) {}
-    void merge(std::shared_ptr<Mergeable> o) {
-        auto other = dynamic_pointer_cast<Sum>(o);
-        sum += other->sum;
+    void merge(std::shared_ptr<Mergeable> info) override {
+        auto sum_info = dynamic_pointer_cast<Sum>(info);
+        if (sum_info) {
+            sum += sum_info->sum;
+        }
     }
     virtual void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
         auto add_tag = dynamic_pointer_cast<Add>(tag);
-        auto ett_handle = dynamic_pointer_cast<ETTHandle>(handle);
-        sum += add_tag->add * ett_handle->vertex_size();
+        if (add_tag) {
+            auto ett_handle = dynamic_pointer_cast<ETTHandle>(handle);
+            sum += add_tag->add * ett_handle->vertex_size();
+        }
     }
 };
 
@@ -93,12 +99,12 @@ TEST(ETTTest, BasicSubtree) {
     for (int i = 1; i <= 10; i++) ett->new_node(i, Sum(i));
     for (int i = 2; i <= 5; i++) ett->link(1, i);
     for (int i = 6; i <= 10; i++) ett->link(2, i);
-    ASSERT_EQ(ett->query_sum(2), 2+6+7+8+9+10);
-    ASSERT_EQ(ett->query_info(2), 2);
+    ASSERT_EQ(ett->query_sum(2)->sum, 2+6+7+8+9+10);
+    ASSERT_EQ(ett->query_info(2)->sum, 2);
     ASSERT_EQ(ett->is_ancestor_of(2, 6), true);
     ASSERT_EQ(ett->is_ancestor_of(6, 2), false);
     ASSERT_EQ(ett->is_ancestor_of(2, 3), false);
-    
+
     ett->insert(2, Add(3));
 }
 

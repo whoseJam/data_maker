@@ -18,29 +18,27 @@ class Edge :
 public:
     Edge();
     Edge(const Edge& other);
-    CL_UPDATE_FUNC(Edge, add_attribute, attrs, UF_append_vector, CK_equal_to(Attribute), );
+    auto add_attribute(std::shared_ptr<Attribute> attr) -> std::shared_ptr<Edge>;
     std::shared_ptr<Edge> format(const std::string& fmt);
     
-    int get_start();
-    int get_end();
-    std::shared_ptr<Attribute> get(const std::string& name);
-    void set(int s, int e);
+    auto start() -> int;
+    auto end() -> int;
+    auto attr(const std::string& name) -> std::shared_ptr<Attribute>;
+    auto start(int s) -> void;
+    auto end(int e) -> void;
 
-    virtual void generate(bool re, std::shared_ptr<Node> from) override;
-    virtual std::shared_ptr<Node> clone() override;
-    virtual void out() override;
+    virtual auto generate(bool re) -> void override;
+    virtual auto clone(bool first) -> std::shared_ptr<Node> override;
     
-    virtual bool equal(std::shared_ptr<Hashable> other) override;
-    virtual uint hash_code() override;
-
     virtual void parse(const std::string& spec, int n, ...) override;
+    virtual void out() override;
     
     friend class Tree;
     friend class Graph;
 private:
     std::vector<std::shared_ptr<Attribute>> attrs;
-    int start;
-    int end;
+    int start_;
+    int end_;
 };
 
 std::shared_ptr<Edge> edge();

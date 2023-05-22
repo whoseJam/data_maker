@@ -578,9 +578,9 @@ auto Splay<T, L>::remove(std::shared_ptr<T> info) -> void {
     if (!prev && !next) { root_ = nullptr; return; }
     else if (!prev) { splay(next, root_); root_->remove_child(0); root_->push_up(); return; }
     else if (!next) { splay(prev, root_); root_->remove_child(1); root_->push_up(); return; }
-    splay(prev, root_); splay(next, root_->ch[1]);
-    root_->ch[1]->remove_child(0);
-    root_->ch[1]->push_up();
+    splay(prev, root_); splay(next, root_->ch_[1]);
+    root_->ch_[1]->remove_child(0);
+    root_->ch_[1]->push_up();
     root_->push_up();
 }
 
@@ -688,14 +688,14 @@ auto Splay<T, L>::query_sum(int l, int r) -> std::shared_ptr<T> {
 template<typename T, typename L>
 auto Splay<T, L>::query(std::shared_ptr<SplayNode> cur, std::shared_ptr<T> info) -> std::shared_ptr<SplayNode> {
     if (!cur) return nullptr;
-    auto cur_info = std::dynamic_pointer_cast<Comparable>(cur->info);
+    auto cur_info = std::dynamic_pointer_cast<Comparable>(cur->info_);
     auto new_info = std::dynamic_pointer_cast<Comparable>(info);
     if (!cur_info || !new_info) MESSAGE("Splay<T, L>", UNABLE("Comparable"));
     cur->push_down();
     auto cmp_ans = cur_info->compare_to(new_info);
-    if (cmp_ans < 0) return query(cur->ch[1], info);
+    if (cmp_ans < 0) return query(cur->ch_[1], info);
     else if (cmp_ans == 0) return cur;
-    else return query(cur->ch[0], info);
+    else return query(cur->ch_[0], info);
 }
 
 /*
@@ -718,7 +718,7 @@ template<typename T, typename L>
 auto Splay<T, L>::query_info(std::shared_ptr<T> info) -> std::shared_ptr<T> {
     CALL(FUNCTION);
     auto target = query(root_, info);
-    return target ? target->info : nullptr;
+    return target ? target->info_ : nullptr;
 }
 
 /*
@@ -729,7 +729,7 @@ template<typename T, typename L>
 auto Splay<T, L>::query_info(std::shared_ptr<SplayHandle> x) -> std::shared_ptr<T> {
     CALL(FUNCTION);
     auto target = std::dynamic_pointer_cast<SplayNode>(x);
-    return target->info;
+    return target->info_;
 }
 
 /*

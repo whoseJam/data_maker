@@ -2,13 +2,14 @@
 #include <iostream>
 
 #include "Tree.h"
-#include "Clone.h"
 #include "Debug.h"
 #include "Logger.h"
 #include "Random.h"
 
 using namespace std;
 using namespace Random;
+
+namespace mk {
 
 using TreeFunPtr = void(Tree::*)();
 int Tree::robin_iter = 0;
@@ -32,14 +33,14 @@ Tree::Tree(const Tree& other) :
     if (!other.template_edge) MESSAGE("Tree", NEED("edge"));
     if (!other.template_vertex) MESSAGE("Tree", NEED("vertex"));
 
-    vertex_num = dynamic_pointer_cast<Integer>(other.vertex_num->clone());
+    vertex_num = dynamic_pointer_cast<Integer>(other.vertex_num->clone(0));
     tf = other.tf;
-    template_edge = dynamic_pointer_cast<Edge>(other.template_edge->clone());
-    template_vertex = dynamic_pointer_cast<Vertex>(other.template_vertex->clone());
+    template_edge = dynamic_pointer_cast<Edge>(other.template_edge->clone(0));
+    template_vertex = dynamic_pointer_cast<Vertex>(other.template_vertex->clone(0));
     for (auto edge : other.edges)
-        edges.push_back(dynamic_pointer_cast<Edge>(edge->clone()));
+        edges.push_back(dynamic_pointer_cast<Edge>(edge->clone(0)));
     for (auto vertex : other.vertices)
-        vertices.push_back(dynamic_pointer_cast<Vertex>(vertex->clone()));
+        vertices.push_back(dynamic_pointer_cast<Vertex>(vertex->clone(0)));
     fmt = other.fmt;
 }
 
@@ -285,8 +286,8 @@ auto Tree::add_edge(int f, int s) -> void {
     edges.push_back(e);
 }
 
-namespace mk {
-    shared_ptr<Tree> tree() {
-        return make_shared<Tree>();
-    }
+shared_ptr<Tree> tree() {
+    return make_shared<Tree>();
+}
+
 }

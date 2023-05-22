@@ -2,6 +2,7 @@
 #define TREE_H
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <functional>
@@ -12,9 +13,10 @@
 #include "Integer.h"
 #include "Attribute.h"
 
+namespace mk {
+
 class Tree : 
     public Node, 
-    public Hashable,
     public Iterable,
     public Formatable {
 public:
@@ -22,11 +24,11 @@ public:
 
     Tree();
     Tree(const Tree& other);
-    std::shared_ptr<Tree> size(int num);
-    CL_UPDATE_FUNC(Tree, size, vertex_num, UF_set, CK_equal_to(Integer), );
+    auto size(int n) -> std::shared_ptr<Tree>;
+    auto size(std::shared_ptr<Integer> n) -> std::shared_ptr<Tree>;
     auto tree_form(TreeForm tf) -> std::shared_ptr<Tree>;
-    CL_UPDATE_FUNC(Tree, edge, template_edge, UF_assign, CK_equal_to(Edge), );
-    CL_UPDATE_FUNC(Tree, vertex, template_vertex, UF_assign, CK_equal_to(Vertex), );
+    auto edge(std::shared_ptr<Edge> e) -> std::shared_ptr<Tree>;
+    auto vertex(std::shared_ptr<Vertex> v) -> std::shared_ptr<Tree>;
     auto format(const std::string& fmt) -> std::shared_ptr<Tree>;
     
     auto vertex(int u) -> std::shared_ptr<Vertex>;
@@ -34,12 +36,8 @@ public:
     auto edge_set() -> std::vector<std::shared_ptr<Edge>>&;
     auto size() -> int;
 
-    virtual void generate(bool re, std::shared_ptr<Node> from) override;
-    virtual std::shared_ptr<Node> clone() override;
-    virtual void out() override;
-    
-    virtual bool equal(std::shared_ptr<Hashable> other) override;
-    virtual uint hash_code();
+    virtual auto generate(bool re) -> void override;
+    virtual auto clone(bool first) -> std::shared_ptr<Node> override;
 
     virtual void iter_reset() override;
     virtual void iter_next() override;
@@ -47,6 +45,7 @@ public:
     virtual bool iter_at_last() override;
 
     virtual void parse(const std::string& specifier, int n, ...) override;
+    virtual void out() override;
 private:
     void gen_long_tree();
     void gen_random_tree();
@@ -70,18 +69,17 @@ private:
     bool empty_stat_called;
 };
 
-namespace mk {
-    std::shared_ptr<Tree> tree();
-    template<typename T, typename CHECKER = 
-        std::enable_if_t<
-            std::is_same_v<std::decay_t<T>, int> || 
-            std::is_same_v<
-                Integer, 
-                shared_ptr_t<std::decay_t<T>>>>>
-    std::shared_ptr<Tree> tree(T&& n) {
-        auto n_move = n;
-        return tree()->size(std::forward<T>(n_move));
-    }
+std::shared_ptr<Tree> tree();
+template<typename T, typename CHECKER = 
+    std::enable_if_t<
+        std::is_same_v<std::decay_t<T>, int> || 
+        std::is_same_v<
+            Integer, 
+            shared_ptr_t<std::decay_t<T>>>>>
+std::shared_ptr<Tree> tree(T&& n) {
+    auto n_move = n;
+    return tree()->size(std::forward<T>(n_move));
+}
 }
 
 #endif
