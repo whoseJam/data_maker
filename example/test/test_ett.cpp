@@ -106,6 +106,16 @@ TEST(ETTTest, BasicSubtree) {
     ASSERT_EQ(ett->is_ancestor_of(2, 3), false);
 
     ett->insert(2, Add(3));
+    ASSERT_EQ(ett->query_info(6)->sum, 6+3);
+    ASSERT_EQ(ett->query_sum(2)->sum, 2+6+7+8+9+10 + 3+3+3+3+3+3);
+    ASSERT_EQ(ett->query_sum(3)->sum, 3);
+    ett->cut(2, 1);
+    ett->link(3, 2);
+    ASSERT_EQ(ett->query_sum(3)->sum, 3+60);
+    ASSERT_TRUE(ett->is_ancestor_of(3, 10));
+    ett->cut(10, 2);
+    ASSERT_EQ(ett->query_sum(3)->sum, 63-13);
+    ASSERT_FALSE(ett->is_ancestor_of(3, 10));
 }
 
 int main(int argc, char **argv) {

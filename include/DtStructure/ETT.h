@@ -59,23 +59,6 @@ struct ETTTag<L, false> : public Lazytag {
     bool rev;
     ETTTag() : rev(false) {}
     ETTTag(bool r) : rev(r) {}
-    virtual auto push(std::shared_ptr<Lazytag> o, std::shared_ptr<Handle> h) -> void override {
-        CALL(FUNCTION);
-        auto other = std::dynamic_pointer_cast<ETTTag>(o);
-        rev ^= other->rev;
-        if (other->rev) {
-            auto splay = std::dynamic_pointer_cast<SplayHandle>(h);
-            splay->swap_child();
-        }
-    }
-};
-template<typename L>
-struct ETTTag<L, true> : public Lazytag {
-    std::shared_ptr<L> tag;
-    bool rev;
-    ETTTag() : rev(false) {}
-    ETTTag(std::shared_ptr<L> tag) : tag(std::move(tag)) {}
-    ETTTag(bool r) : rev(r) {}
     virtual auto push(std::shared_ptr<Lazytag> tag, std::shared_ptr<Handle> handle) -> void override {
         CALL(FUNCTION);
         auto ett_tag = std::dynamic_pointer_cast<ETTTag>(tag);
@@ -86,29 +69,53 @@ struct ETTTag<L, true> : public Lazytag {
                 splay->swap_child();
             }
         }
-        this->tag->push(tag, this->shared_from_this());
+    }
+};
+template<typename L>
+struct ETTTag<L, true> : public Lazytag {
+    std::shared_ptr<L> tag;
+    bool rev;
+    ETTTag() : rev(false) {}
+    ETTTag(std::shared_ptr<L> tag) : tag(std::move(tag)) {}
+    ETTTag(bool r) : rev(r) { tag = std::make_shared<L>(); }
+    virtual auto push(std::shared_ptr<Lazytag> tag, std::shared_ptr<Handle> handle) -> void override {
+        CALL(FUNCTION);
+        auto ett_tag = std::dynamic_pointer_cast<ETTTag>(tag);
+        if (ett_tag) {
+            rev ^= ett_tag->rev;
+            if (ett_tag->rev) {
+                auto splay = std::dynamic_pointer_cast<SplayHandle>(handle);
+                splay->swap_child();
+            }
+            if (ett_tag->tag) {
+                if (!this->tag) this->tag = std::make_shared<L>();
+                this->tag->push(ett_tag->tag, handle);
+            }
+        }
     }
 };
 
 
-template<typename T, bool MCHECKER = std::is_base_of_v<Mergeable, T>, bool PCHECKER = std::is_base_of_v<Pushable, T>>
+template<typename T, typename L, 
+    bool MCHECKER = std::is_base_of_v<Mergeable, T>, 
+    bool PCHECKER = std::is_base_of_v<Pushable, T> && std::is_base_of_v<Lazytag, L>>
 struct ETTInfo;
-template<typename T>
-struct ETTInfo<T, true, true> : 
+template<typename T, typename L>
+struct ETTInfo<T, L, true, true> : 
     public Mergeable,
     public Pushable,
     public ETTHandle,
-    public std::enable_shared_from_this<ETTInfo<T>> {
+    public std::enable_shared_from_this<ETTInfo<T, L>> {
     int x, y, ne, nv;
     std::shared_ptr<T> info;
-    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()) { CALL(FUNCTION); }
+    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()), nv(0), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x) : info(std::move(info)), x(x), y(-1), nv(1), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x, int y) : info(std::move(info)), x(x), y(y), nv(0), ne(1) { CALL(FUNCTION); }
     virtual auto edge_size() -> int override { return ne; }
     virtual auto vertex_size() -> int override { return nv; }
     virtual auto merge(std::shared_ptr<Mergeable> o) -> void override {
         CALL(FUNCTION);
-        auto other = std::dynamic_pointer_cast<ETTInfo<T, true>>(o);
+        auto other = std::dynamic_pointer_cast<ETTInfo<T, L>>(o);
         x = other->x;
         y = other->y;
         ne += other->ne;
@@ -120,23 +127,24 @@ struct ETTInfo<T, true, true> :
     }
     virtual auto push(std::shared_ptr<Lazytag> tag, std::shared_ptr<Handle> handle) -> void override {
         CALL(FUNCTION);
-        info->push(tag, this->shared_from_this());
+        auto ett_tag = std::dynamic_pointer_cast<ETTTag<L>>(tag);
+        info->push(ett_tag->tag, this->shared_from_this());
     }
 };
-template<typename T>
-struct ETTInfo<T, true, false> : 
+template<typename T, typename L>
+struct ETTInfo<T, L, true, false> : 
     public Mergeable,
     public ETTHandle {
     int x, y, ne, nv;
     std::shared_ptr<T> info;
-    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()) { CALL(FUNCTION); }
+    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()), nv(0), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x) : info(std::move(info)), x(x), y(-1), nv(1), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x, int y) : info(std::move(info)), x(x), y(y), nv(0), ne(1) { CALL(FUNCTION); }
     virtual auto edge_size() -> int override { return ne; }
     virtual auto vertex_size() -> int override { return nv; }
     virtual auto merge(std::shared_ptr<Mergeable> o) -> void override {
         CALL(FUNCTION);
-        auto other = std::dynamic_pointer_cast<ETTInfo<T, true>>(o);
+        auto other = std::dynamic_pointer_cast<ETTInfo<T, L>>(o);
         x = other->x;
         y = other->y;
         ne += other->ne;
@@ -148,22 +156,22 @@ struct ETTInfo<T, true, false> :
     }
 };
 
-template<typename T>
-struct ETTInfo<T, false, true> : 
+template<typename T, typename L>
+struct ETTInfo<T, L, false, true> : 
     public Mergeable,
     public Pushable,
     public ETTHandle,
-    public std::enable_shared_from_this<ETTInfo<T>>  {
+    public std::enable_shared_from_this<ETTInfo<T, L>>  {
     int x, y, ne, nv;
     std::shared_ptr<T> info;
-    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()) { CALL(FUNCTION); }
+    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()), nv(0), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x) : info(std::move(info)), x(x), y(-1), nv(1), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x, int y) : info(std::move(info)), x(x), y(y), nv(0), ne(1) { CALL(FUNCTION); }
     virtual auto edge_size() -> int override { return ne; }
     virtual auto vertex_size() -> int override { return nv; }
     virtual auto merge(std::shared_ptr<Mergeable> o) -> void override {
         CALL(FUNCTION);
-        auto other = std::dynamic_pointer_cast<ETTInfo<T, true>>(o);
+        auto other = std::dynamic_pointer_cast<ETTInfo<T, L>>(o);
         x = other->x;
         y = other->y;
         ne += other->ne;
@@ -171,24 +179,25 @@ struct ETTInfo<T, false, true> :
     }
     virtual auto push(std::shared_ptr<Lazytag> tag, std::shared_ptr<Handle> handle) -> void override {
         CALL(FUNCTION);
-        info->push(tag, this->shared_from_this());
+        auto ett_tag = std::dynamic_pointer_cast<ETTTag<L, true>>(tag);
+        info->push(ett_tag->tag, this->shared_from_this());
     }
 };
 
-template<typename T>
-struct ETTInfo<T, false, false> : 
+template<typename T, typename L>
+struct ETTInfo<T, L, false, false> : 
     public Mergeable,
     public ETTHandle {
     int x, y, ne, nv;
     std::shared_ptr<T> info;
-    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()) { CALL(FUNCTION); }
+    ETTInfo() : x(-1), y(-1), info(std::make_shared<T>()), nv(0), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x) : info(std::move(info)), x(x), y(-1), nv(1), ne(0) { CALL(FUNCTION); }
     ETTInfo(std::shared_ptr<T> info, int x, int y) : info(std::move(info)), x(x), y(y), nv(0), ne(1) { CALL(FUNCTION); }
     virtual auto edge_size() -> int override { return ne; }
     virtual auto vertex_size() -> int override { return nv; }
     virtual auto merge(std::shared_ptr<Mergeable> o) -> void override {
         CALL(FUNCTION);
-        auto other = std::dynamic_pointer_cast<ETTInfo<T, true>>(o);
+        auto other = std::dynamic_pointer_cast<ETTInfo<T, L>>(o);
         x = other->x;
         y = other->y;
         ne += other->ne;
@@ -218,7 +227,7 @@ public:
 private:
     auto dfs(int u, int f, int rt) -> void;
 
-    using MyETTInfo = Hidden::ETTInfo<T>;
+    using MyETTInfo = Hidden::ETTInfo<T, L>;
     using MyETTTag = Hidden::ETTTag<L>;
     using MyETTEdge = Hidden::ETTEdge;
     using MyETTVertex = Hidden::ETTVertex;
@@ -302,12 +311,6 @@ auto ETT<T, L>::make_root(int u) -> void {
     splay->insert_after(splay->size(), aft);
     eulers[last_root] = nullptr;
     eulers[u] = splay;
-    if (n == 4) {
-        for (int i = 1; i <= 4; i++) {
-            auto tmp = splay->query_info(i);
-            std::cout<<(tmp->x)<<" "<<(tmp->y)<<"  ";
-        }std::cout<<"\n";
-    }
 }
 
 /*
@@ -345,11 +348,9 @@ auto ETT<T, L>::is_ancestor_of(int a, int s) -> bool {
     auto splay = std::dynamic_pointer_cast<SplayNodeType>(handle_a)->belong();
     int ra = splay->rank(handle_a);
     int rs = splay->rank(handle_s);
-    std::cout<<"ra and rs get\n";
     if (ra == 1) return true;
     std::shared_ptr<MyETTInfo> edge = splay->query_info(ra - 1);
     if (!edge) MESSAGE("ETT<T, L>", UNKNOWN);
-    std::cout<<"ex="<<edge->x<<" ey="<<edge->y<<" ra="<<ra<<"\n";
     auto edge_info = emap->query_info(MyETTEdge(edge->x, edge->y));
     if (!edge_info) MESSAGE("ETT<T, L>", UNKNOWN);
     auto handle_e1 = edge_info->handle1;
@@ -400,7 +401,6 @@ auto ETT<T, L>::link(int u, int v, std::shared_ptr<T> info) -> void {
     splay_u->insert_after(ru + 1, splay_v);
     
     emap->insert(MyETTEdge(u, v, e1, e2));
-    std::cout<<"ttt\n";
 }
 
 /*
@@ -544,7 +544,6 @@ auto ETT<T, L>::new_node(int u, std::shared_ptr<T> info) -> void {
     if (qu) return;
     auto splay_u = std::make_shared<SplayType>();
     auto handle_u = splay_u->insert_after(0, MyETTInfo(info, u));
-    std::cout<<"ff\n";
     vmap->insert(MyETTVertex(u, handle_u));
     eulers[u] = splay_u;
 }
