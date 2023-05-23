@@ -25,7 +25,7 @@ class Pushable {
 public:
     Pushable() = default;
     virtual ~Pushable() = default;
-    virtual void push(std::shared_ptr<Lazytag>, std::shared_ptr<Handle>) = 0;
+    virtual void push(Lazytag*, Handle*) = 0;
 };
 
 class Info {
@@ -38,7 +38,7 @@ class Mergeable : public Info {
 public:
     Mergeable() = default;
     virtual ~Mergeable() = default;
-    virtual auto merge(std::shared_ptr<Mergeable> other) -> void = 0;
+    virtual auto merge(Mergeable* other) -> void = 0;
 };
 
 class Lazytag : public Pushable {
@@ -52,7 +52,7 @@ class Hashable {
 public:
     Hashable() = default;
     virtual ~Hashable() = default;
-    virtual bool equal(std::shared_ptr<Hashable> other) = 0;
+    virtual bool equal(Hashable* other) = 0;
     virtual uint hash_code() = 0;
 };
 
@@ -60,7 +60,7 @@ class Comparable {
 public:
     Comparable() = default;
     virtual ~Comparable() = default;
-    virtual int compare_to(std::shared_ptr<Comparable>) = 0;
+    virtual int compare_to(Comparable* other) = 0;
 };
 
 }

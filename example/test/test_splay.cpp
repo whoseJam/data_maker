@@ -18,8 +18,8 @@ struct Add : public Lazytag {
     int add;
     Add() : add(0) {}
     Add(int a) : add(a) {}
-    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
-        auto other = dynamic_pointer_cast<Add>(o);
+    void push(Lazytag* o, Handle* h) override {
+        auto other = dynamic_cast<Add*>(o);
         add += other->add;
     }
 };
@@ -28,8 +28,8 @@ struct AddAndMul : public Lazytag {
     int k, b;
     AddAndMul() : k(1), b(0) {}
     AddAndMul(int k, int b) : k(k), b(b) {}
-    void push(shared_ptr<Lazytag> o, shared_ptr<Handle> h) override {
-        auto other = dynamic_pointer_cast<AddAndMul>(o);
+    void push(Lazytag* o, Handle* h) override {
+        auto other = dynamic_cast<AddAndMul*>(o);
         other->k *= k;
         other->b *= k; other->b += b;
     }
@@ -39,10 +39,10 @@ struct Rev : public Lazytag {
     bool rev;
     Rev() : rev(0) {}
     Rev(bool r) : rev(r) {}
-    void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
-        auto other = dynamic_pointer_cast<Rev>(tag);
+    void push(Lazytag* tag, Handle* handle) override {
+        auto other = dynamic_cast<Rev*>(tag);
         rev ^= other->rev;
-        auto sp = dynamic_pointer_cast<SplayHandle>(handle);
+        auto sp = dynamic_cast<SplayHandle*>(handle);
         if (other->rev) sp->swap_child();
     }
 };
@@ -52,8 +52,8 @@ struct Int : public Comparable {
     int val;
     Int() : val(0) {}
     Int(int v) : val(v) {}
-    int compare_to(shared_ptr<Comparable> o) override {
-        int v = dynamic_pointer_cast<Int>(o)->val;
+    int compare_to(Comparable* o) override {
+        int v = dynamic_cast<Int*>(o)->val;
         return val - v;
     }
 };
@@ -62,8 +62,8 @@ struct Val : public Info, public Pushable {
     int val;
     Val() : val(0) {}
     Val(int v) : val(v) {}
-    void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
-        val += dynamic_pointer_cast<Add>(tag)->add;
+    void push(Lazytag* tag, Handle* handle) override {
+        val += dynamic_cast<Add*>(tag)->add;
     }
 };
 
@@ -71,13 +71,13 @@ struct Sum : public Mergeable, public Pushable {
     int sum;
     Sum() : sum(0) {}
     Sum(int v) : sum(v) {}
-    void merge(shared_ptr<Mergeable> o) override {
-        auto other = dynamic_pointer_cast<Sum>(o);
+    void merge(Mergeable* o) override {
+        auto other = dynamic_cast<Sum*>(o);
         sum += other->sum;
     }
-    void push(shared_ptr<Lazytag> tag, shared_ptr<Handle> handle) override {
-        auto hd = dynamic_pointer_cast<SplayHandle>(handle);
-        auto add_tag = dynamic_pointer_cast<Add>(tag);
+    void push(Lazytag* tag, Handle* handle) override {
+        auto hd = dynamic_cast<SplayHandle*>(handle);
+        auto add_tag = dynamic_cast<Add*>(tag);
         sum += hd->size() * add_tag->add;
     }
 };
@@ -86,8 +86,8 @@ struct XorSumAndMin : public Mergeable {
     int sum, mn;
     XorSumAndMin() : sum(0), mn(inf) {}
     XorSumAndMin(int v) : sum(v), mn(v) {}
-    virtual void merge(shared_ptr<Mergeable> o) override {
-        auto other = dynamic_pointer_cast<XorSumAndMin>(o);
+    virtual void merge(Mergeable* o) override {
+        auto other = dynamic_cast<XorSumAndMin*>(o);
         sum ^= other->sum;
         mn = min(mn, other->mn);
     }
@@ -100,8 +100,8 @@ struct Longest1 : public Mergeable {
     int right1;
     Longest1() : len(0), left1(0), right1(0), mxlen(0) {}
     Longest1(int v) : len(1), left1(v), right1(v), mxlen(v) {}
-    void merge(shared_ptr<Mergeable> o) override {
-        auto other = dynamic_pointer_cast<Longest1>(o);
+    void merge(Mergeable* o) override {
+        auto other = dynamic_cast<Longest1*>(o);
         mxlen = max(mxlen, max(other->mxlen, right1 + other->left1));
         left1 = (len == left1) ? left1 + other->left1 : left1;
         right1 = (other->len == other->right1) ? right1 + other->right1 : other->right1;
@@ -111,25 +111,25 @@ struct Longest1 : public Mergeable {
 
 TEST(SplayTest, BasicInsert) {
     {
-    auto splay = make_shared<Splay<Sum>>();
-    splay->insert_after(0, Sum(1));     // [1]
-    splay->insert_after(0, Sum(2));     // [2, 1]
-    ASSERT_EQ(splay->query_sum(1, 1)->sum, 2);    
-    ASSERT_EQ(splay->query_sum(2, 2)->sum, 1);
-    ASSERT_EQ(splay->query_sum(1, 2)->sum, 3);
-    splay->insert_after(2, Sum(3));     // [2, 1, 3]
-    splay->insert_after(3, Sum(4));     // [2, 1, 3, 4]
-    ASSERT_EQ(splay->query_sum(3, 4)->sum, 7);
-    ASSERT_EQ(splay->query_sum(2, 4)->sum, 8);
-    splay->insert_before(1, Sum(5));    // [5, 2, 1, 3, 4]
-    ASSERT_EQ(splay->query_sum(1, 3)->sum, 8);
-    splay->insert_before(6, Sum(6));    // [5, 2, 1, 3, 4, 6]
-    ASSERT_EQ(splay->query_sum(4, 6)->sum, 13);
-    splay->insert_after(2, Sum(7));     // [5, 2, 7, 1, 3, 4, 6]
-    splay->insert_before(2, Sum(8));    // [5, 8, 2, 7, 1, 3, 4, 6]
-    ASSERT_EQ(splay->query_sum(2, 3)->sum, 10);
-    ASSERT_EQ(splay->query_sum(3, 4)->sum, 9);
-    ASSERT_EQ(splay->query_sum(2, 4)->sum, 17);
+    Splay<Sum> splay;
+    splay.insert_after(0, Sum(1));     // [1]
+    splay.insert_after(0, Sum(2));     // [2, 1]
+    ASSERT_EQ(splay.query_sum(1, 1).sum, 2);    
+    ASSERT_EQ(splay.query_sum(2, 2).sum, 1);
+    ASSERT_EQ(splay.query_sum(1, 2).sum, 3);
+    splay.insert_after(2, Sum(3));     // [2, 1, 3]
+    splay.insert_after(3, Sum(4));     // [2, 1, 3, 4]
+    ASSERT_EQ(splay.query_sum(3, 4).sum, 7);
+    ASSERT_EQ(splay.query_sum(2, 4).sum, 8);
+    splay.insert_before(1, Sum(5));    // [5, 2, 1, 3, 4]
+    ASSERT_EQ(splay.query_sum(1, 3).sum, 8);
+    splay.insert_before(6, Sum(6));    // [5, 2, 1, 3, 4, 6]
+    ASSERT_EQ(splay.query_sum(4, 6).sum, 13);
+    splay.insert_after(2, Sum(7));     // [5, 2, 7, 1, 3, 4, 6]
+    splay.insert_before(2, Sum(8));    // [5, 8, 2, 7, 1, 3, 4, 6]
+    ASSERT_EQ(splay.query_sum(2, 3).sum, 10);
+    ASSERT_EQ(splay.query_sum(3, 4).sum, 9);
+    ASSERT_EQ(splay.query_sum(2, 4).sum, 17);
     }
     ASSERT_EQ(COUNT_SPLAY, 0);
     ASSERT_EQ(COUNT_SPLAYNODE, 0);
@@ -137,24 +137,24 @@ TEST(SplayTest, BasicInsert) {
 
 TEST(SplayTest, BasicRemove) {
     {
-    auto splay = make_shared<Splay<Sum>>();
-    splay->insert_after(0, Sum(1));
-    splay->insert_after(1, Sum(2));
-    splay->insert_after(2, Sum(3));     // [1, 2, 3]
-    ASSERT_EQ(splay->query_sum(1, 3)->sum, 6);
-    splay->remove(2);                   // [1, 3]
-    ASSERT_EQ(splay->size(), 2);
-    ASSERT_EQ(splay->query_sum(1, 2)->sum, 4);
-    splay->insert_before(1, Sum(4));    // [4, 1, 3]
-    splay->insert_before(4, Sum(5));    // [4, 1, 3, 5]
-    splay->insert_after(4, Sum(6));     // [4, 1, 3, 5, 6]
-    ASSERT_EQ(splay->query_sum(1, 5)->sum, 19);
-    splay->remove(1);                   // [1, 3, 5, 6]
-    ASSERT_EQ(splay->size(), 4);
-    ASSERT_EQ(splay->query_sum(1, 4)->sum, 15);
-    splay->remove(4);                   // [1, 3, 5]
-    ASSERT_EQ(splay->size(), 3);
-    ASSERT_EQ(splay->query_sum(2, 3)->sum, 8);
+    Splay<Sum> splay;
+    splay.insert_after(0, Sum(1));
+    splay.insert_after(1, Sum(2));
+    splay.insert_after(2, Sum(3));     // [1, 2, 3]
+    ASSERT_EQ(splay.query_sum(1, 3).sum, 6);
+    splay.remove(2);                   // [1, 3]
+    ASSERT_EQ(splay.size(), 2);
+    ASSERT_EQ(splay.query_sum(1, 2).sum, 4);
+    splay.insert_before(1, Sum(4));    // [4, 1, 3]
+    splay.insert_before(4, Sum(5));    // [4, 1, 3, 5]
+    splay.insert_after(4, Sum(6));     // [4, 1, 3, 5, 6]
+    ASSERT_EQ(splay.query_sum(1, 5).sum, 19);
+    splay.remove(1);                   // [1, 3, 5, 6]
+    ASSERT_EQ(splay.size(), 4);
+    ASSERT_EQ(splay.query_sum(1, 4).sum, 15);
+    splay.remove(4);                   // [1, 3, 5]
+    ASSERT_EQ(splay.size(), 3);
+    ASSERT_EQ(splay.query_sum(2, 3).sum, 8);
     }
     ASSERT_EQ(COUNT_SPLAY, 0);
     ASSERT_EQ(COUNT_SPLAYNODE, 0);
@@ -162,22 +162,22 @@ TEST(SplayTest, BasicRemove) {
 
 TEST(SplayTest, NotMergeable) {
     {
-    auto splay = make_shared<Splay<Val, Add>>();
-    splay->insert_after(0, Val(1));     // [1]
-    splay->insert_after(1, Val(2));     // [1, 2]
-    splay->insert_after(2, Val(3));     // [1, 2, 3]
-    splay->insert_before(1, Val(4));    // [4, 1, 2, 3]
-    splay->insert_before(4, Val(5));    // [4, 1, 2, 5, 3]
-    splay->insert_after(4, Val(6));     // [4, 1, 2, 5, 6, 3]
+    Splay<Val, Add> splay;
+    splay.insert_after(0, Val(1));     // [1]
+    splay.insert_after(1, Val(2));     // [1, 2]
+    splay.insert_after(2, Val(3));     // [1, 2, 3]
+    splay.insert_before(1, Val(4));    // [4, 1, 2, 3]
+    splay.insert_before(4, Val(5));    // [4, 1, 2, 5, 3]
+    splay.insert_after(4, Val(6));     // [4, 1, 2, 5, 6, 3]
     {   vector<int> ans = {4, 1, 2, 5, 6, 3};
         for (int i = 0; i < 6; i++) {
-            ASSERT_EQ(splay->query_info(i + 1)->val, ans[i]);
+            ASSERT_EQ(splay.query_info(i + 1).val, ans[i]);
         }
     }
-    splay->insert(2, 4, Add(4));                 // [4, 5, 6, 9, 6, 3]
-    ASSERT_EQ(splay->query_info(2)->val, 5);
-    ASSERT_EQ(splay->query_info(3)->val, 6);
-    ASSERT_EQ(splay->query_info(1)->val, 4);
+    splay.insert(2, 4, Add(4));                 // [4, 5, 6, 9, 6, 3]
+    ASSERT_EQ(splay.query_info(2).val, 5);
+    ASSERT_EQ(splay.query_info(3).val, 6);
+    ASSERT_EQ(splay.query_info(1).val, 4);
     }
     ASSERT_EQ(COUNT_SPLAY, 0);
     ASSERT_EQ(COUNT_SPLAYNODE, 0);
@@ -185,24 +185,24 @@ TEST(SplayTest, NotMergeable) {
 
 TEST(SplayTest, BasicSplit) {
     {
-    auto splay = make_shared<Splay<Val, Add>>();
+    Splay<Val, Add> splay;
     for (int i = 1; i <= 10; i++) {
-        splay->insert_after(splay->size(), Val(i));
+        splay.insert_after(splay.size(), Val(i));
     }   // [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ASSERT_EQ(splay->query_info(4)->val, 4);
-    auto sub_sequence = splay->split(3, 7); // [3, 4, 5, 6, 7] + [1, 2, 8, 9, 10]
+    ASSERT_EQ(splay.query_info(4).val, 4);
+    auto sub_sequence = splay.split(3, 7); // [3, 4, 5, 6, 7] + [1, 2, 8, 9, 10]
     {   vector<int> original = {1, 2, 8, 9, 10};
         vector<int> subseq = {3, 4, 5, 6, 7};
         for (int i = 1; i <= 5; i++) {
-            ASSERT_EQ(splay->query_info(i)->val, original[i - 1]);
-            ASSERT_EQ(sub_sequence->query_info(i)->val, subseq[i - 1]);
+            ASSERT_EQ(splay.query_info(i).val, original[i - 1]);
+            ASSERT_EQ(sub_sequence.query_info(i).val, subseq[i - 1]);
         }
     }
-    sub_sequence->insert(1, 3, Add(100)); // [103, 104, 105, 6, 7]
-    splay->insert_after(4, sub_sequence); // [1, 2, 8, 9, 103, 104, 105, 6, 7, 10]
+    sub_sequence.insert(1, 3, Add(100)); // [103, 104, 105, 6, 7]
+    splay.insert_after(4, std::move(sub_sequence)); // [1, 2, 8, 9, 103, 104, 105, 6, 7, 10]
     {   vector<int> ans = {1, 2, 8, 9, 103, 104, 105, 6, 7, 10};
         for (int i = 1; i <= 10; i++)
-            ASSERT_EQ(splay->query_info(i)->val, ans[i - 1]);
+            ASSERT_EQ(splay.query_info(i).val, ans[i - 1]);
     }
     }
     ASSERT_EQ(COUNT_SPLAY, 0);
@@ -211,17 +211,17 @@ TEST(SplayTest, BasicSplit) {
 
 TEST(SplayTest, BasicHandle) {
     {
-    auto splay = make_shared<Splay<Val, Add>>();
-    shared_ptr<SplayHandle> h, t;
+    Splay<Val, Add> splay;
+    SplayHandle* h, *t;
     for (int i = 1; i <= 10; i++) {
-        auto tmp = splay->insert_after(splay->size(), Val(i));
+        auto tmp = splay.insert_after(splay.size(), Val(i));
         if (i == 1) h = tmp;
         if (i == 6) t = tmp; 
     }   // [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    splay->insert(h, t, Add(100));
+    splay.insert(h, t, Add(100));
     {   vector<int> ans = {101, 102, 103, 104, 105, 106, 7, 8, 9, 10};
         for (int i = 1; i <= 10; i++)
-            ASSERT_EQ(splay->query_info(i)->val, ans[i - 1]);
+            ASSERT_EQ(splay.query_info(i).val, ans[i - 1]);
     }
     }
     ASSERT_EQ(COUNT_SPLAY, 0);
@@ -232,10 +232,10 @@ TEST(SplayTest, StrongTestLongest1) {
     {
     int n = 1000;
     vector<int> check; check.resize(n);
-    auto splay = make_shared<Splay<Longest1>>();
+    Splay<Longest1> splay;
     for (int i = 0; i < n; i++) {
         check[i] = rand_int(0, 1);
-        splay->insert_after(i, Longest1(check[i]));
+        splay.insert_after(i, Longest1(check[i]));
     }
     for (int i = 0; i < n; i++) {
         char type = rand_int(0, 1);
@@ -248,12 +248,12 @@ TEST(SplayTest, StrongTestLongest1) {
                 if (check[j] == 1) cur1++;
                 else cur1 = 0; ans = max(ans, cur1);
             }
-            ASSERT_EQ(splay->query_sum(l, r)->mxlen, ans);
+            ASSERT_EQ(splay.query_sum(l, r).mxlen, ans);
         } else {
             int pos = rand_int(1, n);
             int to = rand_int(0, 1);
             check[pos - 1] = to;
-            splay->insert(pos, Longest1(to));
+            splay.insert(pos, Longest1(to));
         }
     }
     }
@@ -265,10 +265,10 @@ TEST(SplayTest, StrongTestRevAndXorAndMin) {
     {
     int n = 1000;
     vector<int> check; check.resize(n);
-    auto splay = make_shared<Splay<XorSumAndMin, Rev>>();
+    Splay<XorSumAndMin, Rev> splay;
     for (int i = 0; i < n; i++) {
         check[i] = rand_int(0, 100000);
-        splay->insert_after(i, XorSumAndMin(check[i]));
+        splay.insert_after(i, XorSumAndMin(check[i]));
     }
     for (int i = 0; i < n; i++) {
         int type = rand_int(0, 1);
@@ -281,15 +281,15 @@ TEST(SplayTest, StrongTestRevAndXorAndMin) {
                 mn = min(mn, check[j]);
                 ans ^= check[j];
             }
-            auto q = splay->query_sum(l, r);
-            ASSERT_EQ(q->mn, mn);
-            ASSERT_EQ(q->sum, ans);
+            auto q = splay.query_sum(l, r);
+            ASSERT_EQ(q.mn, mn);
+            ASSERT_EQ(q.sum, ans);
         } else {
             int l = rand_int(1, n);
             int r = rand_int(1, n);
             if (l > r) swap(l, r);
             for (int j = l-1, k = r-1; j <= k; j++, k--) swap(check[j], check[k]); 
-            splay->insert(l, r, Rev(true));
+            splay.insert(l, r, Rev(true));
         }
     }
     }
@@ -299,24 +299,54 @@ TEST(SplayTest, StrongTestRevAndXorAndMin) {
 
 TEST(SplayTest, BasicComparable) {
     {
-    auto splay = make_shared<Splay<Int>>();
-    auto v1 = splay->insert(Int(1));
-    auto v5 = splay->insert(Int(5));
-    auto v3 = splay->insert(Int(3));
-    ASSERT_EQ(splay->rank(v1), 1);
-    ASSERT_EQ(splay->rank(v5), 3);
-    ASSERT_EQ(splay->rank(v3), 2);
-    auto v4 = splay->insert(Int(4));
-    auto v2 = splay->insert(Int(2));
-    auto v33 = splay->insert(Int(3));
-    ASSERT_EQ(splay->rank(v33), splay->rank(v3));
-    ASSERT_EQ(splay->rank(v4), 5);
-    ASSERT_EQ(splay->rank(v2), 2);
-    ASSERT_EQ(splay->rank(v3), 3);
+    Splay<Int> splay;
+    auto v1 = splay.insert(Int(1));
+    auto v5 = splay.insert(Int(5));
+    auto v3 = splay.insert(Int(3));
+    ASSERT_EQ(splay.rank(v1), 1);
+    ASSERT_EQ(splay.rank(v5), 3);
+    ASSERT_EQ(splay.rank(v3), 2);
+    auto v4 = splay.insert(Int(4));
+    auto v2 = splay.insert(Int(2));
+    auto v33 = splay.insert(Int(3));
+    ASSERT_EQ(splay.rank(v33), splay.rank(v3));
+    ASSERT_EQ(splay.rank(v4), 5);
+    ASSERT_EQ(splay.rank(v2), 2);
+    ASSERT_EQ(splay.rank(v3), 3);
     ASSERT_EQ(v3->same(), 2);
     }
     ASSERT_EQ(COUNT_SPLAY, 0);
     ASSERT_EQ(COUNT_SPLAYNODE, 0);
+}
+
+int mk::DEBUGCNT = 0;
+Splay<bool> splay;
+TEST(SplayTest, PressureTest) {
+    {
+    int n = 10000;
+    // Splay<XorSumAndMin, Rev> splay;
+    for (int i = 0; i < n; i++)
+        splay.insert_after(i, true);
+    std::cout<<DEBUGCNT<<"\n";
+    for (int i = 0; i < 30000; i++) {
+        int type = rand_int(0, 1);
+        if (type == 0 || true) {
+            int l = rand_int(1, n);
+            int r = rand_int(1, n);
+            if (l > r) swap(l, r);
+            auto q = splay.query_info(l);
+        } else {
+            int l = rand_int(1, n);
+            int r = rand_int(1, n);
+            if (l > r) swap(l, r);
+            // splay.insert(l, r, Rev(true));
+        }
+    }
+
+    }
+    cout<<"debug cnt="<<DEBUGCNT<<"\n";
+    // ASSERT_EQ(COUNT_SPLAY, 0);
+    // ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 int main(int argc, char **argv) {

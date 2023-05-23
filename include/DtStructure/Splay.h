@@ -31,69 +31,147 @@ namespace Hidden {
 
 template<typename T, typename L>
 struct SplayNode : 
-    public SplayHandle,
-    public std::enable_shared_from_this<SplayNode<T, L>> {
-    std::shared_ptr<SplayNode> ch_[2];
-    std::weak_ptr<SplayNode> fa_;
-    std::weak_ptr<Splay<T, L>> splay_;
-    std::shared_ptr<T> info_;
-    std::shared_ptr<T> sum_;
-    std::shared_ptr<L> tag_;
+    public SplayHandle {
+    SplayNode* ch_[2];
+    SplayNode* fa_;
+    T info_;
+    T sum_;
+    L tag_;
     int same_;
     int size_;
     int diff_;
-    SplayNode(std::shared_ptr<Splay<T, L>> splay) : 
-        same_(1), size_(1), diff_(1), splay_(splay) { info_ = std::make_shared<T>(); COUNT_SPLAYNODE++; };
-    SplayNode(std::shared_ptr<T> info, std::shared_ptr<Splay<T, L>> splay) : 
-        same_(1), size_(1), diff_(1), splay_(splay), info_(std::move(info)) { COUNT_SPLAYNODE++; };
-    ~SplayNode() { COUNT_SPLAYNODE--; }
+    SplayNode() : same_(1), size_(1), diff_(1) { 
+        COUNT_SPLAYNODE++;
+        fa_ = ch_[0] = ch_[1] = nullptr; 
+    }
+    SplayNode(const T& info) : same_(1), size_(1), diff_(1) { 
+        COUNT_SPLAYNODE++; 
+        info_ = info;
+        fa_ = ch_[0] = ch_[1] = nullptr;
+    }
+    SplayNode(const SplayNode& other) {
+        COUNT_SPLAYNODE++;
+        info_ = other.info_;
+        sum_ = other.sum_;
+        tag_ = other.tag_;
+        same_ = other.same_;
+        size_ = other.size_;
+        diff_ = other.diff_;
+        fa_ = nullptr;
+        if (other.ch_[0]) ch_[0] = new SplayNode(*other.ch_[0]);
+        if (other.ch_[1]) ch_[1] = new SplayNode(*other.ch_[1]);
+    }
+    SplayNode(SplayNode&& other) {
+        COUNT_SPLAYNODE++;
+        info_ = std::move(other.info_);
+        sum_ = std::move(other.sum_);
+        tag_ = std::move(other.tag_);
+        same_ = other.same_;
+        size_ = other.size_;
+        diff_ = other.diff_;
+        fa_ = other.fa_; other.fa_ = nullptr;
+        ch_[0] = other.ch_[0]; other.ch_[0] = nullptr;
+        ch_[1] = other.ch_[1]; other.ch_[1] = nullptr;
+    }
+    SplayNode& operator =(const SplayNode& other) {
+        if (&other == this) return *this;
+        COUNT_SPLAYNODE++;
+        info_ = other.info_;
+        sum_ = other.sum_;
+        tag_ = other.tag_;
+        same_ = other.same_;
+        size_ = other.size_;
+        diff_ = other.diff_;
+        fa_ = nullptr;
+        if (other.ch_[0]) ch_[0] = new SplayNode(*other.ch_[0]);
+        if (other.ch_[1]) ch_[1] = new SplayNode(*other.ch_[1]);
+        return *this;
+    }
+    SplayNode& operator =(SplayNode&& other) {
+        if (&other == this) return *this;
+        COUNT_SPLAYNODE++;
+        info_ = std::move(other.info_);
+        sum_ = std::move(other.sum_);
+        tag_ = std::move(other.tag_);
+        same_ = other.same_;
+        size_ = other.size_;
+        diff_ = other.diff_;
+        fa_ = other.fa_; other.fa_ = nullptr;
+        ch_[0] = other.ch_[0]; other.ch_[0] = nullptr;
+        ch_[1] = other.ch_[1]; other.ch_[1] = nullptr;
+        return *this;
+    }
+    ~SplayNode() {
+        COUNT_SPLAYNODE--;
+        if (ch_[0]) delete ch_[0];
+        if (ch_[1]) delete ch_[1];
+    }
+    auto clear() -> void {
+        if (ch_[0]) ch_[0]->clear();
+        if (ch_[1]) ch_[1]->clear();
+        if (ch_[0]) { delete ch_[0]; ch_[0] = nullptr; }
+        if (ch_[1]) { delete ch_[1]; ch_[1] = nullptr; }
+        info_ = T(); sum_ = T(); tag_ = L();
+        same_ = size_ = diff_ = 0;
+    }
+    auto query_first_info() -> T {
+        auto cur = this;
+        while (cur->fa_) cur = cur->fa_;
+        while (cur->ch_[0]) cur = cur->ch_[0];
+        return cur->info_;
+    }
+    auto query_last_info() -> T {
+        auto cur = this;
+        while (cur->fa_) cur = cur->fa_;
+        while (cur->ch_[1]) cur = cur->ch_[1];
+        return cur->info_;
+    }
     auto same() -> int override { return same_; }
     auto size() -> int override { return size_; }
     auto diff() -> int override { return diff_; }
     auto swap_child() -> void override { std::swap(ch_[0], ch_[1]); }
-    auto child(int x) -> std::shared_ptr<SplayNode>& { return ch_[x]; }
-    auto father() -> std::shared_ptr<SplayNode> { return fa_.lock(); }
-    auto father(std::shared_ptr<SplayNode> f) { fa_ = f; }
-    auto belong() -> std::shared_ptr<Splay<T, L>> {
-        CALL(FUNCTION);
-        std::vector<std::shared_ptr<SplayNode>> road;
-        auto cur  = this->shared_from_this();
-        while (cur) { road.push_back(cur); cur = cur->father(); }
-        for (int i = road.size() - 1; i >= 0; i--) road[i]->push_down();
-        return splay_.lock();
-    }
-    auto insert_child(std::shared_ptr<SplayNode> child, int type) -> void {
+    auto child(int x) -> SplayNode*& { return ch_[x]; }
+    auto insert_child(SplayNode* child, int type) -> void {
         CALL(FUNCTION);
         if (ch_[type]) MESSAGE(CLASS, UNKNOWN);
         ch_[type] = child;
-        child->father(this->shared_from_this());
+        child->fa_ = this;
     }
     auto remove_child(int type) -> void {
         CALL(FUNCTION);
-        ch_[type]->father(nullptr);
+        if (ch_[type]) {
+            ch_[type]->fa_ = nullptr;
+            delete ch_[type];
+            ch_[type] = nullptr;
+        }
+    }
+    auto remove_and_take_out_child(int type) -> SplayNode* {
+        CALL(FUNCTION);
+        auto ans = ch_[type];
+        ans->fa_ = nullptr;
         ch_[type] = nullptr;
+        return ans;
     }
 
     template<typename U, bool CHECKER = std::is_base_of_v<Mergeable, U>>
     struct push_up_helper;
     template<typename U>
     struct push_up_helper<U, true> {
-        void call(std::shared_ptr<SplayNode> node) {
+        void call(SplayNode* node) {
             CALL(FUNCTION);
-            node->sum_ = std::make_shared<T>();
+            node->sum_ = T();
             if (node->ch_[0])
-                node->sum_->merge(node->ch_[0]->sum_);
-            if (node->info_)
-                node->sum_->merge(node->info_);
+                node->sum_.merge(&(node->ch_[0]->sum_));
+            node->sum_.merge(&(node->info_));
             if (node->ch_[1])
-                node->sum_->merge(node->ch_[1]->sum_);
+                node->sum_.merge(&(node->ch_[1]->sum_));
         }
     };
     template<typename U>
-    struct push_up_helper<U, false> { void call(std::shared_ptr<SplayNode> node) {} };
+    struct push_up_helper<U, false> { void call(SplayNode* node) {} };
     auto push_up() -> void {
         CALL(FUNCTION);
-        push_up_helper<T>().call(this->shared_from_this());
+        push_up_helper<T>().call(this);
         size_ = same_; diff_ = 1;
         if (ch_[0]) { size_ += ch_[0]->size_; diff_ += ch_[0]->diff_; }
         if (ch_[1]) { size_ += ch_[1]->size_; diff_ += ch_[1]->diff_; }
@@ -102,154 +180,165 @@ struct SplayNode :
     struct push_down_helper;
     template<typename U>
     struct push_down_helper<U, true> {
-        auto call(std::shared_ptr<SplayNode> node) -> void {
+        auto call(SplayNode* node) -> void {
             CALL(FUNCTION);
-            if (!node->tag_) return;
             if (node->ch_[0]) node->ch_[0]->push_tag(node->tag_);
             if (node->ch_[1]) node->ch_[1]->push_tag(node->tag_);
-            node->tag_ = nullptr;
+            node->tag_ = L();
         }
     };
     template<typename U>
-    struct push_down_helper<U, false> { auto call(std::shared_ptr<SplayNode> node) -> void {} };
+    struct push_down_helper<U, false> { auto call(SplayNode* node) -> void {} };
     template<typename U, typename R, bool CHECKER = std::is_base_of_v<Pushable, U> && std::is_base_of_v<Lazytag, R>>
     struct push_to_info_helper;
     template<typename U, typename R>
     struct push_to_info_helper<U, R, true> {
-        auto call(std::shared_ptr<SplayNode> node, std::shared_ptr<L> tag) -> void {
+        auto call(SplayNode* node, const L& tag) -> void {
             CALL(FUNCTION);
-            if (!node->info_) node->info_ = std::make_shared<T>();
-            node->info_->push(tag, node);
-            if (!node->sum_) node->sum_ = std::make_shared<T>();
-            node->sum_->push(tag, node);
+            L& non_const_tag = const_cast<L&>(tag);
+            node->info_.push(&non_const_tag, node);
+            node->sum_.push(&non_const_tag, node);
         }
     };
     template<typename U, typename R>
-    struct push_to_info_helper<U, R, false> { auto call(std::shared_ptr<SplayNode>, std::shared_ptr<L>) -> void {} };
+    struct push_to_info_helper<U, R, false> { auto call(SplayNode*, const L&) -> void {} };
     template<typename U, bool CHECKER = std::is_base_of_v<Lazytag, U>>
     struct push_to_tag_helper;
     template<typename U>
     struct push_to_tag_helper<U, true> {
-        auto call(std::shared_ptr<SplayNode> node, std::shared_ptr<L> tag) -> void {
+        auto call(SplayNode* node, const L& tag) -> void {
             CALL(FUNCTION);
-            if (!node->tag_) node->tag_ = std::make_shared<L>();
-            node->tag_->push(tag, node);
+            L& non_const_tag = const_cast<L&>(tag);
+            node->tag_.push(&non_const_tag, node);
         }
     };
     template<typename U>
-    struct push_to_tag_helper<U, false> { auto call(std::shared_ptr<SplayNode> node, std::shared_ptr<L> tag) -> void {} };
+    struct push_to_tag_helper<U, false> { auto call(SplayNode* node, const L& tag) -> void {} };
 
     auto push_down() -> void {
         CALL(FUNCTION);
-        push_down_helper<L>().call(this->shared_from_this());
-        if (ch_[0]) ch_[0]->splay_ = splay_;
-        if (ch_[1]) ch_[1]->splay_ = splay_;
+        push_down_helper<L>().call(this);
     }
-    auto push_tag(std::shared_ptr<L> tag) {
+    auto push_tag(const L& tag) {
         CALL(FUNCTION);
-        push_to_info_helper<T, L>().call(this->shared_from_this(), tag);
-        push_to_tag_helper<L>().call(this->shared_from_this(), tag);
+        push_to_info_helper<T, L>().call(this, tag);
+        push_to_tag_helper<L>().call(this, tag);
     }
 };
 
 }   // HIDEN END
-
+extern bool gdebug;
 template<typename T, typename L = Empty>
-class Splay : 
-    public std::enable_shared_from_this<Splay<T, L>> {
+class Splay {
 public:
     using SplayNode = Hidden::SplayNode<T, L>;
     
-    Splay() { COUNT_SPLAY++; }
-    ~Splay() { COUNT_SPLAY--; }
-    auto insert(T info) -> std::shared_ptr<SplayHandle>;
-    auto insert(std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle>;
-    auto insert(int l, int r, L tag) -> void;
-    auto insert(int l, int r, std::shared_ptr<L> tag) -> void;
-    auto insert(int k, T info) -> std::shared_ptr<SplayHandle>;
-    auto insert(int k, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle>;
-    auto insert(std::shared_ptr<SplayHandle> l, std::shared_ptr<SplayHandle> r, L tag) -> void;
-    auto insert(std::shared_ptr<SplayHandle> l, std::shared_ptr<SplayHandle> r, std::shared_ptr<L> tag) -> void;
-    auto insert_after(int k, T info) -> std::shared_ptr<SplayHandle>;
-    auto insert_after(int k, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle>;
-    auto insert_after(int k, std::shared_ptr<Splay<T, L>> tr) -> std::shared_ptr<SplayHandle>;
-    auto insert_before(int k, T info) -> std::shared_ptr<SplayHandle>;
-    auto insert_before(int k, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle>;
-    auto insert_before(int k, std::shared_ptr<Splay<T, L>> tr) -> std::shared_ptr<SplayHandle>;
+    Splay() : root_(nullptr), cnt(0) { COUNT_SPLAY++; }
+    Splay(const Splay& other) {
+        COUNT_SPLAY++;
+        root_ = new SplayNode(*other.root_);
+    }
+    Splay(Splay&& other) {
+        COUNT_SPLAY++;
+        root_ = other.root_;
+        other.root_ = nullptr;
+    }
+    ~Splay() {
+        COUNT_SPLAY--;
+        //if (root_) delete root_;
+    }
+    auto insert(const T& info) -> SplayHandle*;
+    auto insert(int l, int r, const L& tag) -> void;
+    auto insert(int k, const T& info) -> SplayHandle*;
+    auto insert(SplayHandle* l, SplayHandle* r, const L& tag) -> void;
+    auto insert_after(int k, const T& info) -> SplayHandle*;
+    auto insert_after(int k, Splay<T, L>&& tr) -> SplayHandle*;
+    auto insert_before(int k, const T& info) -> SplayHandle*;
+    auto insert_before(int k, Splay<T, L>&& tr) -> SplayHandle*;
     auto remove(int k) -> void;
-    auto remove(T info) -> void;
-    auto remove(std::shared_ptr<T> info) -> void;
-    auto remove(std::shared_ptr<SplayHandle> x) -> void;
-    auto split(int l, int r) -> std::shared_ptr<Splay<T, L>>;
-    auto split(std::shared_ptr<SplayHandle> l, std::shared_ptr<SplayHandle> r) -> std::shared_ptr<Splay<T, L>>;
-    auto query_info(int k) -> std::shared_ptr<T>;
-    auto query_info(std::shared_ptr<SplayHandle>) -> std::shared_ptr<T>;
-    auto query_info(T info) -> std::shared_ptr<T>;
-    auto query_info(std::shared_ptr<T> info) -> std::shared_ptr<T>;
-    auto query_sum(int k) -> std::shared_ptr<T>;
-    auto query_sum(int l, int r) -> std::shared_ptr<T>;
-    auto rank(std::shared_ptr<SplayHandle> x) -> int;
+    auto remove(const T& info) -> void;
+    auto remove(SplayHandle* x) -> void;
+    auto split(int l, int r) -> Splay<T, L>;
+    auto split(SplayHandle* l, SplayHandle* r) -> Splay<T, L>;
+    auto query_info(int k) -> T;
+    auto query_info(SplayHandle*) -> T;
+    auto query_info(const T& info) -> T;
+    auto query_sum(int k) -> T;
+    auto query_sum(int l, int r) -> T;
+    auto rank(SplayHandle* x) -> int;
     auto size() -> int;
     auto clear() -> void;
 private:
-    auto root(std::shared_ptr<SplayNode> rt) -> void;
-    auto rotate(std::shared_ptr<SplayNode> x, std::shared_ptr<SplayNode>& rt) -> void;
-    auto splay(std::shared_ptr<SplayNode> x, std::shared_ptr<SplayNode>& rt) -> void;
-    auto insert(std::shared_ptr<SplayNode>& cur, std::shared_ptr<SplayNode> fa, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle>;
-    auto query(std::shared_ptr<SplayNode> cur, std::shared_ptr<T> info) -> std::shared_ptr<SplayNode>;
-    auto find_kth_min(std::shared_ptr<SplayNode> cur, int k) -> std::shared_ptr<SplayNode>;
-    auto find_kth_max(std::shared_ptr<SplayNode> cur, int k) -> std::shared_ptr<SplayNode>;
-    auto find_root_prev() -> std::shared_ptr<SplayNode>;
-    auto find_root_next() -> std::shared_ptr<SplayNode>;
-    std::shared_ptr<SplayNode> root_;
+    Splay(SplayNode* node) { COUNT_SPLAY++; root_ = node; }
+    auto rotate(SplayNode* x, SplayNode*& rt) -> void;
+    auto splay(SplayNode* x, SplayNode*& rt) -> void;
+    auto insert(SplayNode*& cur, SplayNode* fa, const T& info) -> SplayHandle*;
+    auto query(SplayNode* cur, const T& info) -> SplayNode*;
+    auto find_kth_min(SplayNode* cur, int k) -> SplayNode*;
+    auto find_kth_max(SplayNode* cur, int k) -> SplayNode*;
+    auto find_root_prev() -> SplayNode*;
+    auto find_root_next() -> SplayNode*;
+    auto my_malloc(const T& info) -> SplayNode* {
+        pool[cnt] = SplayNode(info);
+        return &pool[cnt++];
+    }
+    SplayNode* root_;
+    std::array<SplayNode, 10240> pool;
+    int cnt;
 };
 
+/*
+Description:
+清空Splay.
+*/
 template<typename T, typename L>
 auto Splay<T, L>::clear() -> void {
-    root_ = nullptr;
-}
-
-template<typename T, typename L>
-auto Splay<T, L>::root(std::shared_ptr<SplayNode> rt) -> void {
-    root_ = std::move(rt);
-    root_->splay_ = this->shared_from_this();
+    if (root_) {
+        // delete root_;
+        root_ = nullptr;
+    }
 }
 
 /*
 Description:
-获取Splay的大小
+获取Splay的大小.
 */
 template<typename T, typename L>
 auto Splay<T, L>::size() -> int {
     CALL(FUNCTION);
-    if (!root_) return 0;
-    return root_->size_;
+    if (root_) return root_->size_;
+    return 0;
 }
 
 template<typename T, typename L>
-auto Splay<T, L>::rotate(std::shared_ptr<SplayNode> x, std::shared_ptr<SplayNode>& rt) -> void {
+auto Splay<T, L>::rotate(SplayNode* x, SplayNode*& rt) -> void {
     CALL(FUNCTION);
-    auto y = x->father();
-    auto z = y->father();
-    int l = (y->child(0)) != x, r = l^1;
-    if (y == rt) rt = x; else if (z->child(0) == y) z->child(0) = x; else z->child(1) = x;
-    x->father(z); y->father(x);
-    if (x->child(r)) x->child(r)->father(y);
-    y->child(l) = x->child(r); x->child(r) = y;
+    auto y = x->fa_;
+    auto z = y->fa_;
+    int l = (y->ch_[0]) != x, r = l^1;
+    if (y == rt) rt = x;
+    else if (z->ch_[0] == y) z->ch_[0] = x;
+    else z->ch_[1] = x;
+    x->fa_ = z; y->fa_ = x;
+    if (x->ch_[r]) x->ch_[r]->fa_ = y;
+    y->ch_[l] = x->ch_[r]; x->ch_[r] = y;
     y->push_up(); x->push_up();
 }
 
 template<typename T, typename L>
-auto Splay<T, L>::splay(std::shared_ptr<SplayNode> x, std::shared_ptr<SplayNode>& rt) -> void {
+auto Splay<T, L>::splay(SplayNode* x, SplayNode*& rt) -> void {
     CALL(FUNCTION);
+    auto ck = x;
+    while (ck != rt && ck->fa_) ck = ck->fa_;
+    if (ck != rt) MESSAGE("Splay<T, L>", UNKNOWN);
     while (x != rt) {
-        auto y = x->father();
-        auto z = y->father();
+        auto y = x->fa_;
+        auto z = y->fa_;
         if (z) z->push_down();
         y->push_down();
         x->push_down();
         if (y != rt) {
-            if ((z->child(1) == y) ^ (y->child(1) == x)) rotate(x, rt);
+            if ((z->ch_[0] == y) ^ (y->ch_[0] == x)) rotate(x, rt);
             else rotate(y, rt);
         }
         rotate(x, rt);
@@ -257,15 +346,13 @@ auto Splay<T, L>::splay(std::shared_ptr<SplayNode> x, std::shared_ptr<SplayNode>
 }
 
 template<typename T, typename L>
-auto Splay<T, L>::insert(std::shared_ptr<SplayNode>& cur, std::shared_ptr<SplayNode> fa, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert(SplayNode*& cur, SplayNode* fa, const T& info) -> SplayHandle* {
     CALL(FUNCTION);
-    if (!cur) { cur = std::make_shared<SplayNode>(info, this->shared_from_this()); cur->fa_ = fa; return cur; }
-    auto cur_info = std::dynamic_pointer_cast<Comparable>(cur->info_);
-    auto new_info = std::dynamic_pointer_cast<Comparable>(info);
-    if (!cur_info || !new_info) MESSAGE("Splay<T, L>", UNABLE("Comparable"));
+    if (!cur) { cur = new SplayNode(info); cur->fa_ = fa; return cur; }
     cur->push_down();
-    auto cmp_ans = cur_info->compare_to(new_info);
-    std::shared_ptr<SplayHandle> ret;
+    T& non_const_info = const_cast<T&>(info);
+    auto cmp_ans = cur->info_.compare_to(&non_const_info);
+    SplayHandle* ret;
     if (cmp_ans < 0) ret = insert(cur->ch_[1], cur, info);
     else if (cmp_ans == 0) { ret = cur; cur->same_++; }
     else ret = insert(cur->ch_[0], cur, info);
@@ -275,53 +362,40 @@ auto Splay<T, L>::insert(std::shared_ptr<SplayNode>& cur, std::shared_ptr<SplayN
 
 /*
 Description:
-插入一个Comparable的元素到Splay中
+插入一个Comparable的元素到Splay中.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert(T info) -> std::shared_ptr<SplayHandle> {
-    CALL(FUNCTION);
-    return insert(std::make_shared<T>(std::move(info)));
-}
-
-/*
-Description:
-插入一个Comparable的元素到Splay中
-*/
-template<typename T, typename L>
-auto Splay<T, L>::insert(std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert(const T& info) -> SplayHandle* {
     CALL(FUNCTION);
     return insert(root_, nullptr, info);
 }
 
 /*
 Description:
-对Splay的[l,r]区间打上标记tag
+对Splay的[l,r]区间打上标记tag.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert(int l, int r, L tag) -> void {
-    CALL(FUNCTION);
-    insert(l, r, std::make_shared<L>(std::move(tag)));
-}
-
-/*
-Description:
-对Splay的[l,r]区间打上标记tag
-*/
-template<typename T, typename L>
-auto Splay<T, L>::insert(int l, int r, std::shared_ptr<L> tag) -> void {
+auto Splay<T, L>::insert(int l, int r, const L& tag) -> void {
     CALL(FUNCTION);
     if (l > r) MESSAGE("Splay<T, L>", ENSURE("l <= r"));
-    auto lq = find_kth_min(root_, l);
-    if (!lq) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
-    auto rq = find_kth_min(root_, r);
-    if (!rq) MESSAGE("Splay<T, L>", ENSURE("1 <= r <= size"));
-    splay(lq, root_);
-    auto prev = find_root_prev();
-    splay(rq, root_);
-    auto next = find_root_next();
-    if (!prev && !next) { if (root_) root_->push_tag(tag); return; }
-    else if (!prev) { splay(next, root_); root_->ch_[0]->push_tag(tag); root_->push_up(); return; }
-    else if (!next) { splay(prev, root_); root_->ch_[1]->push_tag(tag); root_->push_up(); return; }
+    if (l < 1 || l > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
+    if (r < 1 || r > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= r <= size"));
+    auto prev = find_kth_min(root_, l - 1);
+    auto next = find_kth_min(root_, r + 1);
+    if (!prev && !next) {
+        if (root_) root_->push_tag(tag);
+        return;
+    } else if (!prev) {
+        splay(next, root_);
+        root_->ch_[0]->push_tag(tag);
+        root_->push_up();
+        return;
+    } else if (!next) {
+        splay(prev, root_);
+        root_->ch_[1]->push_tag(tag);
+        root_->push_up();
+        return;
+    }
     splay(prev, root_); splay(next, root_->ch_[1]);
     root_->ch_[1]->ch_[0]->push_tag(tag);
     root_->ch_[1]->push_up();
@@ -334,23 +408,10 @@ Description:
 l和r以SplayHandle的形式给出.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert(std::shared_ptr<SplayHandle> l, std::shared_ptr<SplayHandle> r, L tag) -> void {
+auto Splay<T, L>::insert(SplayHandle* l, SplayHandle* r, const L& tag) -> void {
     CALL(FUNCTION);
-    insert(l, r, std::make_shared<L>(tag));
-}
-
-/*
-Description:
-对Splay的[l,r]区间打上标记tag.
-l和r以SplayHandle的形式给出.
-*/
-template<typename T, typename L>
-auto Splay<T, L>::insert(std::shared_ptr<SplayHandle> l, std::shared_ptr<SplayHandle> r, std::shared_ptr<L> tag) -> void {
-    CALL(FUNCTION);
-    auto lq = std::dynamic_pointer_cast<SplayNode>(l);
-    auto rq = std::dynamic_pointer_cast<SplayNode>(r);
-    if (lq->belong() != this->shared_from_this()) MESSAGE("Splay<T, L>", SPLAY_HANDLE_NOT_FOUND);
-    if (rq->belong() != this->shared_from_this()) MESSAGE("Splay<T, L>", SPLAY_HANDLE_NOT_FOUND);
+    auto lq = dynamic_cast<SplayNode*>(l);
+    auto rq = dynamic_cast<SplayNode*>(r);
     int rank_l = rank(lq);
     int rank_r = rank(rq);
     if (rank_l > rank_r) MESSAGE("Splay<T, L>", ENSURE("l <= r"));
@@ -372,17 +433,7 @@ Description:
 修改Splay的第k个元素的值为info.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert(int k, T info) -> std::shared_ptr<SplayHandle> {
-    CALL(FUNCTION);
-    return insert(k, std::make_shared<T>(std::move(info)));
-}
-
-/*
-Description:
-修改Splay的第k个元素的值为info.
-*/
-template<typename T, typename L>
-auto Splay<T, L>::insert(int k, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert(int k, const T& info) -> SplayHandle* {
     CALL(FUNCTION);
     if (k < 1 || k > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= k <= size"));
     auto target = find_kth_min(root_, k);
@@ -397,40 +448,30 @@ Description:
 在Splay的第k个元素之后插入一个值为info的元素.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert_after(int k, T info) -> std::shared_ptr<SplayHandle> {
-    CALL(FUNCTION);
-    return insert_after(k, std::make_shared<T>(std::move(info)));
-}
-
-/*
-Description:
-在Splay的第k个元素之后插入一个值为info的元素.
-*/
-template<typename T, typename L>
-auto Splay<T, L>::insert_after(int k, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert_after(int k, const T& info) -> SplayHandle* {
     CALL(FUNCTION);
     if (k < 0 || k > size()) MESSAGE("Splay<T, L>", ENSURE("0 <= k <= size"));
     auto prev = find_kth_min(root_, k);
     auto next = find_kth_min(root_, k + 1);
     if (!prev && !next) {
-        root_ = std::make_shared<SplayNode>(info, this->shared_from_this());
+        root_ = my_malloc(info);
         root_->push_up();
         return root_;
-    } else if (!prev) { 
+    } else if (!prev) {
         splay(next, root_);
-        root_->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 0); 
-        root_->child(0)->push_up();
+        root_->insert_child(my_malloc(info), 0); 
+        root_->ch_[0]->push_up();
         root_->push_up();
         return root_->child(0); 
-    } else if (!next) { 
-        splay(prev, root_); 
-        root_->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 1); 
-        root_->child(1)->push_up(); 
-        root_->push_up(); 
-        return root_->child(1); 
+    } else if (!next) {
+        splay(prev, root_);
+        root_->insert_child(my_malloc(info), 1);
+        root_->ch_[1]->push_up(); 
+        root_->push_up();
+        return root_->ch_[1]; 
     }
     splay(prev, root_); splay(next, root_->child(1));
-    root_->child(1)->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 0);
+    root_->child(1)->insert_child(my_malloc(info), 0);
     root_->child(1)->child(0)->push_up();
     root_->child(1)->push_up();
     root_->push_up();
@@ -442,31 +483,34 @@ Description:
 在Splay的第k个元素后插入另一个Splay.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert_after(int k, std::shared_ptr<Splay<T, L>> tr) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert_after(int k, Splay<T, L>&& tr) -> SplayHandle* {
     CALL(FUNCTION);
     if (k < 0 || k > size()) MESSAGE("Splay<T, L>", ENSURE("0 <= k <= size"));
     auto prev = find_kth_min(root_, k);
     auto next = find_kth_min(root_, k + 1);
-    if (!prev && !next) { 
-        root_ = std::move(tr->root_); 
-        root_->splay_ = this->shared_from_this(); 
+    if (!prev && !next) {
+        root_ = tr.root_;
+        tr.root_ = nullptr;
         root_->push_up(); 
         return root_; 
     } else if (!prev) { 
         splay(next, root_); 
-        root_->insert_child(std::move(tr->root_) , 0); 
+        root_->insert_child(tr.root_ , 0);
+        tr.root_ = nullptr; 
         root_->ch_[0]->push_up(); 
         root_->push_up(); 
         return root_->ch_[0]; 
     } else if (!next) { 
         splay(prev, root_); 
-        root_->insert_child(std::move(tr->root_) , 1); 
+        root_->insert_child(tr.root_ , 1);
+        tr.root_ = nullptr; 
         root_->ch_[1]->push_up(); 
         root_->push_up(); 
         return root_->ch_[1];
     }
     splay(prev, root_); splay(next, root_->ch_[1]);
-    root_->ch_[1]->insert_child(std::move(tr->root_), 0);
+    root_->ch_[1]->insert_child(tr.root_, 0);
+    tr.root_ = nullptr;
     root_->ch_[1]->ch_[0]->push_up();
     root_->ch_[1]->push_up();
     root_->push_up();
@@ -478,42 +522,32 @@ Description:
 在Splay的第k个元素之前插入一个值为info的元素.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert_before(int k, T info) -> std::shared_ptr<SplayHandle> {
-    CALL(FUNCTION);
-    return insert_before(k, std::make_shared<T>(std::move(info)));
-}
-
-/*
-Description:
-在Splay的第k个元素之前插入一个值为info的元素.
-*/
-template<typename T, typename L>
-auto Splay<T, L>::insert_before(int k, std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert_before(int k, const T& info) -> SplayHandle* {
     CALL(FUNCTION);
     if (k < 1 || k > size() + 1) MESSAGE("Splay<T, L>", ENSURE("1 <= k <= size + 1"));
     auto prev = find_kth_min(root_, k - 1);
     auto next = find_kth_min(root_, k);
     if (!prev && !next) { 
-        root_ = std::make_shared<SplayNode>(info, this->shared_from_this()); 
+        root_ = new SplayNode(info); 
         root_->push_up(); 
         return root_; 
     } else if (!prev) { 
         splay(next, root_); 
-        root_->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 0); 
-        root_->child(0)->push_up(); 
+        root_->insert_child(new SplayNode(info), 0); 
+        root_->ch_[0]->push_up(); 
         root_->push_up(); 
-        return root_->child(0); 
+        return root_->ch_[0]; 
     } else if (!next) { 
         splay(prev, root_); 
-        root_->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 1); 
-        root_->child(1)->push_up(); 
-        root_->push_up(); 
-        return root_->child(1); 
+        root_->insert_child(new SplayNode(info), 1); 
+        root_->ch_[1]->push_up();
+        root_->push_up();
+        return root_->ch_[1];
     }
-    splay(prev, root_); splay(next, root_->child(1));
-    root_->child(1)->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 0);
-    root_->child(1)->child(0)->push_up();
-    root_->child(1)->push_up();
+    splay(prev, root_); splay(next, root_->ch_[1]);
+    root_->ch_[1]->insert_child(new SplayNode(info), 0);
+    root_->ch_[1]->ch_[0]->push_up();
+    root_->ch_[1]->push_up();
     root_->push_up();
     return root_->child(1)->child(0);
 }
@@ -523,16 +557,37 @@ Description:
 在Splay的第k个元素前插入另一个同类型的Splay.
 */
 template<typename T, typename L>
-auto Splay<T, L>::insert_before(int k, std::shared_ptr<Splay<T, L>> tr) -> std::shared_ptr<SplayHandle> {
+auto Splay<T, L>::insert_before(int k, Splay<T, L>&& tr) -> SplayHandle* {
     CALL(FUNCTION);
     if (k < 0 || k > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= k <= size + 1"));
     auto prev = find_kth_min(root_, k - 1);
     auto next = find_kth_min(root_, k);
-    if (!prev && !next) { root_ = std::move(tr->root_); root_->splay = this->shared_from_this(); root_->push_up(); return root_; }
-    else if (!prev) { splay(next, root_); root_->insert_child(std::move(tr->root_), 0); root_->ch[0]->push_up(); root_->push_up(); return root_->ch[0]; }
-    else if (!next) { splay(prev, root_); root_->insert_child(std::move(tr->root_), 1); root_->ch[1]->push_up(); root_->push_up(); return root_->ch[1]; }
+    if (!prev && !next) {
+        root_ = tr.root_;
+        tr.root_ = nullptr;
+        root_->splay = this;
+        root_->push_up();
+        return root_;
+    }
+    else if (!prev) {
+        splay(next, root_);
+        root_->insert_child(tr.root_, 0);
+        tr.root_ = nullptr;
+        root_->ch[0]->push_up();
+        root_->push_up();
+        return root_->ch[0];
+    }
+    else if (!next) {
+        splay(prev, root_);
+        root_->insert_child(tr.root_, 1);
+        tr.root_ = nullptr;
+        root_->ch[1]->push_up();
+        root_->push_up();
+        return root_->ch[1];
+    }
     splay(prev, root_); splay(next, root_->ch[1]);
-    root_->ch[1]->insert_child(std::move(tr->root_), 0);
+    root_->ch[1]->insert_child(tr.root_, 0);
+    tr.root_ = nullptr;
     root_->ch[1]->ch[0]->push_up();
     root_->ch[1]->push_up();
     root_->push_up();
@@ -566,18 +621,7 @@ Description:
 如果有多个值为info的元素被存储在同一个SplayNode中，该SplayNode不会被删除.
 */
 template<typename T, typename L>
-auto Splay<T, L>::remove(T info) -> void {
-    CALL(FUNCTION);
-    remove(std::make_shared<T>(std::move(info)));
-}
-
-/*
-Description:
-从Splay中删除一个值为info的元素.
-如果有多个值为info的元素被存储在同一个SplayNode中，该SplayNode不会被删除.
-*/
-template<typename T, typename L>
-auto Splay<T, L>::remove(std::shared_ptr<T> info) -> void {
+auto Splay<T, L>::remove(const T& info) -> void {
     CALL(FUNCTION);
     auto target = query(root_, info);
     splay(target, root_);
@@ -599,10 +643,10 @@ Description:
 删除由x管理的SplayNode，即使该SplayNode中保存了多个元素.
 */
 template<typename T, typename L>
-auto Splay<T, L>::remove(std::shared_ptr<SplayHandle> x) -> void {
+auto Splay<T, L>::remove(SplayHandle* x) -> void {
     CALL(FUNCTION);
-    auto target = std::dynamic_pointer_cast<SplayNode>(x);
-    if (target->belong() != this->shared_from_this()) MESSAGE("Splay<T, L>", SPLAY_HANDLE_NOT_FOUND);
+    auto target = dynamic_cast<SplayNode>(x);
+    if (target->belong() != this) MESSAGE("Splay<T, L>", SPLAY_HANDLE_NOT_FOUND);
     splay(target, root_);
     auto prev = find_root_prev();
     auto next = find_root_next();
@@ -616,7 +660,7 @@ auto Splay<T, L>::remove(std::shared_ptr<SplayHandle> x) -> void {
 }
 
 template<typename T, typename L>
-auto Splay<T, L>::split(int l, int r) -> std::shared_ptr<Splay<T, L>> {
+auto Splay<T, L>::split(int l, int r) -> Splay<T, L> {
     CALL(FUNCTION);
     if (l > r) MESSAGE("Splay<T, L>", ENSURE("l <= r"));
     auto lq = find_kth_min(root_, l);
@@ -628,32 +672,25 @@ auto Splay<T, L>::split(int l, int r) -> std::shared_ptr<Splay<T, L>> {
     splay(rq, root_);
     auto next = find_root_next();
     if (!prev && !next) { 
-        auto ans = std::make_shared<Splay<T, L>>();
-        ans->root(std::move(root_)); 
-        return ans;
+        auto rt = root_;
+        root_ = nullptr;
+        return Splay<T, L>(rt);
     } else if (!prev) {
         splay(next, root_);
-        auto rt = root_->ch_[0];
-        root_->remove_child(0);
+        auto rt = root_->remove_and_take_out_child(0);
         root_->push_up();
-        auto ans = std::make_shared<Splay<T, L>>();
-        ans->root(rt);
-        return ans;
+        return Splay<T, L>(rt);
     } else if (!next) {
         splay(prev, root_);
-        auto rt = root_->ch_[1];
-        root_->remove_child(1);
+        auto rt = root_->remove_and_take_out_child(1);
         root_->push_up();
-        auto ans = std::make_shared<Splay<T, L>>();
-        ans->root(rt);
-        return ans;
+        return Splay<T, L>(rt);
     }
     splay(prev, root_); splay(next, root_->ch_[1]);
-    auto rt = root_->ch_[1]->ch_[0];
-    root_->ch_[1]->remove_child(0);
+    auto rt = root_->ch_[1]->remove_and_take_out_child(0);
     root_->ch_[1]->push_up();
     root_->push_up();
-    auto ans = std::make_shared<Splay<T, L>>(); ans->root(rt); return ans;
+    return Splay<T, L>(rt);
 }
 
 /*
@@ -662,7 +699,7 @@ Description:
 需要保证T是Mergeable的.
 */
 template<typename T, typename L>
-auto Splay<T, L>::query_sum(int k) -> std::shared_ptr<T> {
+auto Splay<T, L>::query_sum(int k) -> T {
     CALL(FUNCTION);
     return query_sum(k, k);
 }
@@ -673,30 +710,30 @@ Description:
 需要保证T是Mergeable的.
 */
 template<typename T, typename L>
-auto Splay<T, L>::query_sum(int l, int r) -> std::shared_ptr<T> {
+auto Splay<T, L>::query_sum(int l, int r) -> T {
     CALL(FUNCTION);
     if (!std::is_base_of_v<Mergeable, T>) MESSAGE("Splay<T, L>", UNABLE("Mergeable"));
     if (l > r) MESSAGE("Splay<T, L>", ENSURE("l <= r"));
-    auto lq = find_kth_min(root_, l);
-    if (!lq) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
-    auto rq = find_kth_min(root_, r);
-    if (!rq) MESSAGE("Splay<T, L>", ENSURE("1 <= r <= size"));
-    splay(lq, root_);
-    auto prev = find_root_prev();
-    splay(rq, root_);
-    auto next = find_root_next();
+    if (l < 1 || l > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
+    if (r < 1 || r > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= r <= size"));
+    auto prev = find_kth_min(root_, l - 1);
+    auto next = find_kth_min(root_, r + 1);
     if (!prev && !next) return root_->sum_;
     else if (!prev) { 
         splay(next, root_);
-        return root_->child(0)->sum_; 
+        return root_->ch_[0]->sum_; 
     }
-    else if (!next) { splay(prev, root_); return root_->child(1)->sum_; }
-    splay(prev, root_); splay(next, root_->child(1));
-    return root_->child(1)->child(0)->sum_;
+    else if (!next) {
+        splay(prev, root_);
+        return root_->ch_[1]->sum_;
+    }
+    splay(prev, root_);
+    splay(next, root_->ch_[1]);
+    return root_->ch_[1]->ch_[0]->sum_;
 }
 
 template<typename T, typename L>
-auto Splay<T, L>::query(std::shared_ptr<SplayNode> cur, std::shared_ptr<T> info) -> std::shared_ptr<SplayNode> {
+auto Splay<T, L>::query(SplayNode* cur, const T& info) -> SplayNode* {
     if (!cur) return nullptr;
     auto cur_info = std::dynamic_pointer_cast<Comparable>(cur->info_);
     auto new_info = std::dynamic_pointer_cast<Comparable>(info);
@@ -714,21 +751,11 @@ Description:
 需要保证T是Comparable的.
 */
 template<typename T, typename L>
-auto Splay<T, L>::query_info(T info) -> std::shared_ptr<T> {
-    CALL(FUNCTION);
-    return query_info(std::make_shared<T>(info));
-}
-
-/*
-Description:
-查询等于T的元素的info.
-需要保证T是Comparable的.
-*/
-template<typename T, typename L>
-auto Splay<T, L>::query_info(std::shared_ptr<T> info) -> std::shared_ptr<T> {
+auto Splay<T, L>::query_info(const T& info) -> T {
     CALL(FUNCTION);
     auto target = query(root_, info);
-    return target ? target->info_ : nullptr;
+    if (!target) MESSAGE("Splay<T, L>", UNKNOWN);
+    return target->info_;
 }
 
 /*
@@ -736,9 +763,10 @@ Description:
 查询x所管理的SplayNode的info
 */
 template<typename T, typename L>
-auto Splay<T, L>::query_info(std::shared_ptr<SplayHandle> x) -> std::shared_ptr<T> {
+auto Splay<T, L>::query_info(SplayHandle* x) -> T {
     CALL(FUNCTION);
-    auto target = std::dynamic_pointer_cast<SplayNode>(x);
+    auto target = dynamic_cast<SplayNode*>(x);
+    splay(target, root_);
     return target->info_;
 }
 
@@ -747,10 +775,11 @@ Description:
 查询第k个元素的info.
 */
 template<typename T, typename L>
-auto Splay<T, L>::query_info(int k) -> std::shared_ptr<T> {
+auto Splay<T, L>::query_info(int k) -> T {
     CALL(FUNCTION);
     auto target = find_kth_min(root_, k);
     if (!target) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
+    splay(target, root_);
     return target->info_;
 }
 
@@ -758,11 +787,13 @@ auto Splay<T, L>::query_info(int k) -> std::shared_ptr<T> {
 Description:
 查询Splay中从小到大第k个元素.
 */
+extern int DEBUGCNT;
 template<typename T, typename L>
-auto Splay<T, L>::find_kth_min(std::shared_ptr<SplayNode> cur, int k) -> std::shared_ptr<SplayNode> {
+auto Splay<T, L>::find_kth_min(SplayNode* cur, int k) -> SplayNode* {
     CALL(FUNCTION);
     if (!cur) return nullptr;
     cur->push_down();
+    DEBUGCNT++;
     int left = (cur->ch_[0]) ? (cur->ch_[0]->size_) : 0;
     if (left + 1 <= k && k <= left + (cur->same_)) return cur;
     if (left >= k) return find_kth_min(cur->ch_[0], k);
@@ -774,14 +805,14 @@ Description:
 查询Splay中从大到小第k个元素.
 */
 template<typename T, typename L>
-auto Splay<T, L>::find_kth_max(std::shared_ptr<SplayNode> cur, int k) -> std::shared_ptr<SplayNode> {
+auto Splay<T, L>::find_kth_max(SplayNode* cur, int k) -> SplayNode* {
     CALL(FUNCTION);
     if (!cur) return nullptr;
     cur->push_down();
-    int right = (cur->child(1)) ? (cur->child(1)->size_) : 0;
+    int right = (cur->ch_[1]) ? (cur->ch_[1]->size_) : 0;
     if (right + 1 <= k && k <= right + (cur->same_)) return cur;
-    if (right >= k) return find_kth_max(cur->child(1), k);
-    return find_kth_max(cur->child(0), k - right - (cur->same_));
+    if (right >= k) return find_kth_max(cur->ch_[1], k);
+    return find_kth_max(cur->ch_[0], k - right - (cur->same_));
 }
 
 /*
@@ -789,13 +820,13 @@ Description:
 查询当前Splay的根的前驱.
 */
 template<typename T, typename L>
-auto Splay<T, L>::find_root_prev() -> std::shared_ptr<SplayNode> {
+auto Splay<T, L>::find_root_prev() -> SplayNode* {
     CALL(FUNCTION);
-    auto u = root_->child(0);
+    auto u = root_->ch_[0];
     if (!u) return u;
-    while (u->child(1)) {
+    while (u->ch_[1]) {
         u->push_down();
-        u = u->child(1);
+        u = u->ch_[1];
     } return u;
 }
 
@@ -804,13 +835,13 @@ Description:
 查询当前Splay的根的后继.
 */
 template<typename T, typename L>
-auto Splay<T, L>::find_root_next() -> std::shared_ptr<SplayNode> {
+auto Splay<T, L>::find_root_next() -> SplayNode* {
     CALL(FUNCTION);
-    auto u = root_->child(1);
+    auto u = root_->ch_[1];
     if (!u) return u;
-    while (u->child(0)) {
+    while (u->ch_[0]) {
         u->push_down();
-        u = u->child(0);
+        u = u->ch_[0];
     } return u;
 }
 
@@ -820,10 +851,9 @@ Description:
 x的排名定义为比x小的元素的个数+1.
 */
 template<typename T, typename L>
-auto Splay<T, L>::rank(std::shared_ptr<SplayHandle> x) -> int {
+auto Splay<T, L>::rank(SplayHandle* x) -> int {
     CALL(FUNCTION);
-    auto target = std::dynamic_pointer_cast<SplayNode>(x);
-    if (target->belong() != this->shared_from_this()) MESSAGE("Splay<T, L>", SPLAY_HANDLE_NOT_FOUND);
+    auto target = reinterpret_cast<SplayNode*>(x);
     splay(target, root_);
     return root_->ch_[0] ? root_->ch_[0]->size_ + 1 : 1;
 }
