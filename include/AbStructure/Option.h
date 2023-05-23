@@ -9,12 +9,15 @@
 
 namespace mk {
 
+extern int COUNT_OPTION;
+
 class Option :
     public Node,
     public Formatable {
 public:
     Option();
     Option(const Option& other);
+    ~Option();
     std::shared_ptr<Option> add_option(std::shared_ptr<Node> opt, int x);
     std::shared_ptr<Option> add_option(std::shared_ptr<Node> opt, std::shared_ptr<Integer> x);
     

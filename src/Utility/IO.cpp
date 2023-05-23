@@ -1,4 +1,5 @@
 
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -83,6 +84,26 @@ shared_ptr<IO> IO::skip_generate_existing_data() {
     return shared_from_this();
 }
 
+static string service_path;
+auto start_service(const string& path) -> void {
+    service_path = path;
+    freopen(path.c_str(), "w", stdout);
+}
+
+auto start_service() -> void {
+    if (service_path.length() == 0) return;
+    freopen(service_path.c_str(), "a", stdout);
+}
+
+auto pause_service() -> void {
+    close_freopen();
+}
+
+auto IO::debug() -> shared_ptr<IO> {
+    debug_ = true;
+    return shared_from_this();
+}
+
 void IO::generate() {
     if (packs.size() == 0) MESSAGE("IO", NEED("testcase"));
     sort(packs.begin(), packs.end(), [=](const IOPack& a, const IOPack& b){
@@ -105,21 +126,23 @@ void IO::generate() {
     for (int i = 0; i < packs.size(); i++) {
         IOPack& now = packs[i];
         for (int idx = now.l; idx <= now.r; idx++) {
-            close_freopen();
+            pause_service();
             cout << "making test data " << idx << "\n";
             string in_path = working_dir + "/" + input_pre + to_string(idx) + "." + input_suf;
-            if (skip_exist_data && check_file_exist(in_path)) {
-                cout << "test data already exist, skip\n";
-                continue;
+            if (check_file_exist(in_path)) {
+                if (skip_exist_data) {
+                    cout << "test data already exist, skip\n";
+                    continue;
+                }
             }
-            freopen(in_path.c_str(), "w", stdout);
+            start_service(in_path);
             string out_path = working_dir + "/" + output_pre + to_string(idx) + "." + output_suf;
             now.gen();
         }
     }
 
     string problem_conf_path = working_dir + "/problem.conf";
-    freopen(problem_conf_path.c_str(), "w", stdout);
+    start_service(problem_conf_path);
     int n_tests = packs[packs.size() - 1].r;
     cout << "n_tests " << n_tests << "\n";
     cout << "n_ex_tests 0\n";
@@ -133,14 +156,13 @@ void IO::generate() {
     cout << "input_suf " << input_suf << "\n";
     cout << "output_pre " << output_pre << "\n";
     cout << "output_suf " << output_suf << "\n";
-    close_freopen();
 
     string std_path = working_dir + "/std.cpp";
     string std_exec_path = working_dir + "/std";
     if (check_file_exist(std_path)) {
         char cmd[1<<10];
         for (int i = 1; i <= n_tests; i++) {
-            close_freopen();
+            pause_service();
             cout << "running test data " << i << "\n";
 
             sprintf(cmd, "g++ %s -o %s", std_path.c_str(), std_exec_path.c_str());

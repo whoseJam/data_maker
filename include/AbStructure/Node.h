@@ -10,11 +10,14 @@ namespace mk {
 
 #define GENERATE \
     NodeMap::insert(NodeMap::GENERATE_STAGE, this->origin, std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
-    defer(NodeMap::remove(NodeMap::GENERATE_STAGE, this->origin));
-#define CLONE_FIRST 
+    defer(NodeMap::remove(NodeMap::GENERATE_STAGE, this->origin)); \
+    NodeMap::insert(NodeMap::TRACK_STAGE, this->origin, std::dynamic_pointer_cast<Node>(this->shared_from_this()));
 
 #define BUILD(ele) \
     ele->generate(0);
+
+#define CLEAR_ALL \
+    NodeMap::clear(NodeMap::TRACK_STAGE);
 
 #define BUILD_AND_OUT(ele) \
     ele->generate(0); ele->out();
@@ -31,7 +34,8 @@ enum {
 auto insert(int type, void* ptr, std::shared_ptr<Node>) -> void;
 auto remove(int type, void* ptr) -> void;
 auto clear(int type) -> void;
-auto get(int type, void* ptr) -> std::shared_ptr<Node>; 
+auto get(int type, void* ptr) -> std::shared_ptr<Node>;
+auto size(int type) -> int;
 }
 
 class Node {
@@ -66,6 +70,7 @@ clone: 上述情况都不满足.
     auto class::clone(bool first) -> std::shared_ptr<Node> { \
         CALL(FUNCTION); \
         NodeMap::insert(NodeMap::CLONE_FIRST_STAGE, (first ? this->origin : nullptr), std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
+        defer(NodeMap::remove(NodeMap::CLONE_FIRST_STAGE, (first ? this->origin : nullptr))); \
         auto parent = NodeMap::get(NodeMap::GENERATE_STAGE, this->parent); \
         if (parent) return std::dynamic_pointer_cast<Node>(this->shared_from_this()); \
         parent = NodeMap::get(NodeMap::CLONE_FIRST_STAGE, this->parent); \
@@ -86,6 +91,7 @@ clone: 上述情况都不满足.
     virtual auto clone(bool first) -> std::shared_ptr<Node> { \
         CALL(FUNCTION); \
         NodeMap::insert(NodeMap::CLONE_FIRST_STAGE, (first ? this->origin : nullptr), std::dynamic_pointer_cast<Node>(this->shared_from_this())); \
+        defer(NodeMap::remove(NodeMap::CLONE_FIRST_STAGE, (first ? this->origin : nullptr))); \
         auto parent = NodeMap::get(NodeMap::GENERATE_STAGE, this->parent); \
         if (parent) return std::dynamic_pointer_cast<Node>(this->shared_from_this()); \
         parent = NodeMap::get(NodeMap::CLONE_FIRST_STAGE, this->parent); \

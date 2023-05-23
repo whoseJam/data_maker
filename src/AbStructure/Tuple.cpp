@@ -11,15 +11,17 @@ using namespace std;
 
 namespace mk {
 
+int COUNT_TUPLE = 0;
+
 Tuple::Tuple() {
-    CALL(FUNCTION);
+    COUNT_TUPLE++;
     fmt = "$x ";
 }
 
 Tuple::Tuple(const Tuple& other) :
     Node(other),
     Formatable(other) {
-    CALL(FUNCTION);
+    COUNT_TUPLE++;
     callback_before_generate = other.callback_before_generate;
     callback_when_generating = other.callback_when_generating;
     callback_after_generate = other.callback_after_generate;
@@ -28,9 +30,7 @@ Tuple::Tuple(const Tuple& other) :
 }
 
 Tuple::~Tuple() {
-#ifdef OUTPUT_DELETER
-    cout << "delete tuple\n";
-#endif
+    COUNT_TUPLE--;
 }
 
 auto Tuple::append(shared_ptr<Node> ele) -> shared_ptr<Tuple> {
@@ -60,7 +60,7 @@ auto Tuple::after_generate(
     return dynamic_pointer_cast<Tuple>(shared_from_this());
 }
 
-auto Tuple::format(const string& fmt) -> shared_ptr<Tuple> {
+auto Tuple::format(const char* fmt) -> shared_ptr<Tuple> {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Tuple>(shared_from_this());

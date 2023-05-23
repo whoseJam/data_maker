@@ -12,6 +12,6 @@ include_directories(../../include/Utility)
 
 # aux_source_directory(. ABSTRUCTURE_SRC_LIST)
 set(ABSTRUCTURE_SRC_LIST Node.cpp Integer.cpp Format.cpp Character.cpp
-Array.cpp Attribute.cpp Option.cpp Tuple.cpp)
+Array.cpp Attribute.cpp Option.cpp Tuple.cpp Tree.cpp Vertex.cpp Edge.cpp)
 
 add_library(${PROJECT_NAME} ${ABSTRUCTURE_SRC_LIST})

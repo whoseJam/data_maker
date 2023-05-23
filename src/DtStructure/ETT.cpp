@@ -4,6 +4,8 @@
 
 namespace mk {
 
-ETTHandle::ETTHandle() : Handle("ETTHandle") {}
+int COUNT_ETTINFO;
+int COUNT_ETTTAG;
+int COUNT_ETT;
 
 }

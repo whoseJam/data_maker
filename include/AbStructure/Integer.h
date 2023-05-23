@@ -10,6 +10,8 @@
 
 namespace mk {
 
+extern int COUNT_INTEGER;
+
 class Integer : 
     public Node,
     public Formatable {
@@ -22,7 +24,7 @@ public:
     auto upper_bound(int x) -> std::shared_ptr<Integer>;
     auto lower_bound(std::shared_ptr<Integer> l) -> std::shared_ptr<Integer>;
     auto upper_bound(std::shared_ptr<Integer> r) -> std::shared_ptr<Integer>;
-    auto format(const std::string& fmt) -> std::shared_ptr<Integer>;
+    auto format(const char* fmt) -> std::shared_ptr<Integer>;
 
     auto value() -> int;
     auto lower_bound() -> std::shared_ptr<Integer>;

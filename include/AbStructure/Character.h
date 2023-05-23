@@ -8,6 +8,8 @@
 
 namespace mk {
 
+extern int COUNT_CHARACTER;
+
 class Character : 
     public Node,
     public Formatable {
@@ -20,7 +22,7 @@ public:
     auto upper_bound(char x) -> std::shared_ptr<Character>;
     auto lower_bound(std::shared_ptr<Character> l) -> std::shared_ptr<Character>;
     auto upper_bound(std::shared_ptr<Character> r) -> std::shared_ptr<Character>;
-    auto format(const std::string& fmt) -> std::shared_ptr<Character>;
+    auto format(const char* fmt) -> std::shared_ptr<Character>;
     
     auto value() -> char;
     auto lower_bound() -> std::shared_ptr<Character>;

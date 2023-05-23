@@ -15,6 +15,8 @@
 
 namespace mk {
 
+extern int COUNT_TREE;
+
 class Tree : 
     public Node, 
     public Iterable,
@@ -24,12 +26,15 @@ public:
 
     Tree();
     Tree(const Tree& other);
+    ~Tree();
     auto size(int n) -> std::shared_ptr<Tree>;
     auto size(std::shared_ptr<Integer> n) -> std::shared_ptr<Tree>;
     auto tree_form(TreeForm tf) -> std::shared_ptr<Tree>;
     auto edge(std::shared_ptr<Edge> e) -> std::shared_ptr<Tree>;
     auto vertex(std::shared_ptr<Vertex> v) -> std::shared_ptr<Tree>;
-    auto format(const std::string& fmt) -> std::shared_ptr<Tree>;
+    auto before_generate(std::function<void(std::shared_ptr<Tree>)>) -> std::shared_ptr<Tree>;
+    auto after_generate(std::function<void(std::shared_ptr<Tree>)>) -> std::shared_ptr<Tree>;
+    auto format(const char* fmt) -> std::shared_ptr<Tree>;
     
     auto vertex(int u) -> std::shared_ptr<Vertex>;
     auto vertex_set() -> std::vector<std::shared_ptr<Vertex>>&;
@@ -57,6 +62,9 @@ private:
     using TreeFunPtr = void(Tree::*)();
     static int robin_iter;
     static TreeFunPtr gen_func[4];
+
+    std::function<void(std::shared_ptr<Tree>)> callback_before_generate;
+    std::function<void(std::shared_ptr<Tree>)> callback_after_generate;
 
     std::shared_ptr<Integer> vertex_num;
     TreeForm tf;

@@ -5,18 +5,26 @@ using namespace std;
 
 namespace mk {
 
+int COUNT_OPTION = 0;
+
 Option::Option() {
+    COUNT_OPTION++;
     fmt = "$x";
 }
 
 Option::Option(const Option& other) :
     Node(other),
     Formatable(other) {
+    COUNT_OPTION++;
     if (other.result) result = other.result->clone(0);
     for (int i = 0; i < other.opts.size(); i++) {
         opts.push_back(other.opts[i]->clone(0));
         robin.push_back(dynamic_pointer_cast<Integer>(other.robin[i]->clone(0)));
     }
+}
+
+Option::~Option() {
+    COUNT_OPTION--;
 }
 
 shared_ptr<Option> Option::add_option(shared_ptr<Node> opt, int x) {

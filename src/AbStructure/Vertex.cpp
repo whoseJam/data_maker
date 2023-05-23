@@ -1,6 +1,8 @@
 
 #include <iostream>
+#include <memory>
 
+#include "Attribute.h"
 #include "Debug.h"
 #include "Node.h"
 #include "Vertex.h"
@@ -10,15 +12,17 @@ using namespace std;
 
 namespace mk {
 
+int COUNT_VERTEX = 0;
+
 Vertex::Vertex() {
-    CALL(FUNCTION);
+    COUNT_VERTEX++;
     idx = UNSET;
 }
 
 Vertex::Vertex(const Vertex& other) :
     Node(other),
     Formatable(other) {
-    CALL(FUNCTION);
+    COUNT_VERTEX++;
     idx = other.idx;
     for (int i = 0; i < other.attrs.size(); i++)
         attrs.push_back(
@@ -29,12 +33,16 @@ Vertex::Vertex(const Vertex& other) :
 }
 
 Vertex::~Vertex() {
-#ifdef OUTPUT_DELETER
-    cout << "delete vertex\n";
-#endif
+    COUNT_VERTEX--;
 }
 
-shared_ptr<Vertex> Vertex::format(const string& fmt) {
+auto Vertex::add_attribute(shared_ptr<Attribute> attr) -> shared_ptr<Vertex> {
+    CALL(FUNCTION);
+    attrs.push_back(attr);
+    return dynamic_pointer_cast<Vertex>(shared_from_this());
+}
+
+shared_ptr<Vertex> Vertex::format(const char* fmt) {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Vertex>(shared_from_this());

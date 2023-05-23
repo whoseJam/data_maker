@@ -14,8 +14,11 @@ using namespace Random;
 
 namespace mk {
 
+int COUNT_CHARACTER = 0;
+
 Character::Character() {
     CALL(FUNCTION);
+    COUNT_CHARACTER++;
     status = EMPTY;
     fmt = "$x";
 }
@@ -24,6 +27,7 @@ Character::Character(const Character& other) :
     Node(other),
     Formatable(other) {
     CALL(FUNCTION);
+    COUNT_CHARACTER++;
     if (other.l) l = dynamic_pointer_cast<Character>(other.l->clone(0));
     if (other.r) r = dynamic_pointer_cast<Character>(other.r->clone(0));
     if (other.op) op = dynamic_pointer_cast<Operator<Character>>(other.op->clone(0));
@@ -34,9 +38,7 @@ Character::Character(const Character& other) :
 }
 
 Character::~Character() {
-#ifdef OUTPUT_DELETER
-    cout << "delete character\n";
-#endif
+    COUNT_CHARACTER--;
 }
 
 auto Character::calculate(shared_ptr<Operator<Character>> op) -> shared_ptr<Character> {
@@ -71,7 +73,7 @@ auto Character::upper_bound(shared_ptr<Character> r) -> shared_ptr<Character> {
     return dynamic_pointer_cast<Character>(shared_from_this());
 }
 
-auto Character::format(const string& fmt) -> shared_ptr<Character> {
+auto Character::format(const char* fmt) -> shared_ptr<Character> {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Character>(shared_from_this());

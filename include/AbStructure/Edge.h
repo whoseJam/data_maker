@@ -8,18 +8,19 @@
 #include "HashMap.h"
 #include "Attribute.h"
 
-
 namespace mk {
+
+extern int COUNT_EDGE;
 
 class Edge : 
     public Node, 
-    public Hashable,
     public Formatable {
 public:
     Edge();
     Edge(const Edge& other);
+    ~Edge();
     auto add_attribute(std::shared_ptr<Attribute> attr) -> std::shared_ptr<Edge>;
-    std::shared_ptr<Edge> format(const std::string& fmt);
+    auto format(const char* fmt) -> std::shared_ptr<Edge>;
     
     auto start() -> int;
     auto end() -> int;

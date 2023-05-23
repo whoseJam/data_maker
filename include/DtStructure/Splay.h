@@ -12,6 +12,9 @@
 
 namespace mk {
 
+extern int COUNT_SPLAY;
+extern int COUNT_SPLAYNODE;
+
 class SplayHandle : public Handle {
 public:
     SplayHandle() = default;
@@ -40,9 +43,10 @@ struct SplayNode :
     int size_;
     int diff_;
     SplayNode(std::shared_ptr<Splay<T, L>> splay) : 
-        same_(1), size_(1), diff_(1), splay_(splay) { info_ = std::make_shared<T>(); };
+        same_(1), size_(1), diff_(1), splay_(splay) { info_ = std::make_shared<T>(); COUNT_SPLAYNODE++; };
     SplayNode(std::shared_ptr<T> info, std::shared_ptr<Splay<T, L>> splay) : 
-        same_(1), size_(1), diff_(1), splay_(splay), info_(std::move(info)) {};
+        same_(1), size_(1), diff_(1), splay_(splay), info_(std::move(info)) { COUNT_SPLAYNODE++; };
+    ~SplayNode() { COUNT_SPLAYNODE--; }
     auto same() -> int override { return same_; }
     auto size() -> int override { return size_; }
     auto diff() -> int override { return diff_; }
@@ -135,7 +139,6 @@ struct SplayNode :
     template<typename U>
     struct push_to_tag_helper<U, false> { auto call(std::shared_ptr<SplayNode> node, std::shared_ptr<L> tag) -> void {} };
 
-
     auto push_down() -> void {
         CALL(FUNCTION);
         push_down_helper<L>().call(this->shared_from_this());
@@ -157,7 +160,8 @@ class Splay :
 public:
     using SplayNode = Hidden::SplayNode<T, L>;
     
-    Splay() = default;
+    Splay() { COUNT_SPLAY++; }
+    ~Splay() { COUNT_SPLAY--; }
     auto insert(T info) -> std::shared_ptr<SplayHandle>;
     auto insert(std::shared_ptr<T> info) -> std::shared_ptr<SplayHandle>;
     auto insert(int l, int r, L tag) -> void;
@@ -186,6 +190,7 @@ public:
     auto query_sum(int l, int r) -> std::shared_ptr<T>;
     auto rank(std::shared_ptr<SplayHandle> x) -> int;
     auto size() -> int;
+    auto clear() -> void;
 private:
     auto root(std::shared_ptr<SplayNode> rt) -> void;
     auto rotate(std::shared_ptr<SplayNode> x, std::shared_ptr<SplayNode>& rt) -> void;
@@ -198,6 +203,11 @@ private:
     auto find_root_next() -> std::shared_ptr<SplayNode>;
     std::shared_ptr<SplayNode> root_;
 };
+
+template<typename T, typename L>
+auto Splay<T, L>::clear() -> void {
+    root_ = nullptr;
+}
 
 template<typename T, typename L>
 auto Splay<T, L>::root(std::shared_ptr<SplayNode> rt) -> void {
@@ -410,7 +420,7 @@ auto Splay<T, L>::insert_after(int k, std::shared_ptr<T> info) -> std::shared_pt
         splay(next, root_);
         root_->insert_child(std::make_shared<SplayNode>(info, this->shared_from_this()), 0); 
         root_->child(0)->push_up();
-        root_->push_up(); 
+        root_->push_up();
         return root_->child(0); 
     } else if (!next) { 
         splay(prev, root_); 

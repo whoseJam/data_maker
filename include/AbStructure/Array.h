@@ -14,6 +14,8 @@
 
 namespace mk {
 
+extern int COUNT_ARRAY;
+
 class Array : 
     public Node, 
     public Iterable,
@@ -25,7 +27,7 @@ public:
     auto length(int len) -> std::shared_ptr<Array>;
     auto length(std::shared_ptr<Integer> len) -> std::shared_ptr<Array>;
     auto fill(std::shared_ptr<Node> ele) -> std::shared_ptr<Array>;
-    auto format(const std::string& fmt) -> std::shared_ptr<Array>;
+    auto format(const char* fmt) -> std::shared_ptr<Array>;
     auto before_generate(std::function<void(std::shared_ptr<Array>)>) -> std::shared_ptr<Array>;
     auto when_generating(std::function<void(std::shared_ptr<Array>, int)>) -> std::shared_ptr<Array>;
     auto after_generate(std::function<void(std::shared_ptr<Array>)>) -> std::shared_ptr<Array>;

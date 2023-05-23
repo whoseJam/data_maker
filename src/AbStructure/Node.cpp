@@ -20,7 +20,7 @@ auto insert(int type, void* ptr, shared_ptr<Node> item) -> void {
 }
 auto remove(int type, void* ptr) -> void {
     if (!ptr) return;
-    node_map[type][ptr] = nullptr;
+    node_map[type].erase(ptr);
 }
 auto clear(int type) -> void {
     node_map[type].clear();
@@ -28,6 +28,9 @@ auto clear(int type) -> void {
 auto get(int type, void* ptr) -> shared_ptr<Node> {
     if (!ptr) return nullptr;
     return node_map[type][ptr];
+}
+auto size(int type) -> int {
+    return node_map[type].size();
 }
 }
 

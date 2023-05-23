@@ -7,10 +7,11 @@
 
 #include "Node.h"
 #include "Format.h"
-#include "HashMap.h"
 #include "Attribute.h"
 
 namespace mk {
+
+extern int COUNT_VERTEX;
 
 class Vertex : 
     public Node, 
@@ -20,10 +21,10 @@ public:
     Vertex(const Vertex& other);
     virtual ~Vertex();
     auto add_attribute(std::shared_ptr<Attribute> attr) -> std::shared_ptr<Vertex>;
-    std::shared_ptr<Vertex> format(const std::string& fmt);
+    auto format(const char* fmt) -> std::shared_ptr<Vertex>;
     
-    int get();
-    std::shared_ptr<Attribute> get(const std::string& name);
+    auto get() -> int;
+    auto get(const std::string& name) -> std::shared_ptr<Attribute>;
     void set(int idx);
 
     virtual void generate(bool re) override;

@@ -12,6 +12,8 @@
 
 namespace mk {
 
+extern int COUNT_ATTRIBUTE;
+
 class Attribute : 
     public Node,
     public Formatable {

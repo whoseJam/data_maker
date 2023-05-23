@@ -11,8 +11,11 @@ using namespace std;
 
 namespace mk {
 
+int COUNT_EDGE = 0;
+
 Edge::Edge() {
     CALL(FUNCTION);
+    COUNT_EDGE++;
     start_ = UNSET;
     end_ = UNSET;
     fmt = "$s $t\n";
@@ -22,6 +25,7 @@ Edge::Edge(const Edge& other) :
     Node(other),
     Formatable(other) {
     CALL(FUNCTION);
+    COUNT_EDGE++;
     for (int i = 0; i < other.attrs.size(); i++)
         attrs.push_back(
             dynamic_pointer_cast<Attribute>(
@@ -31,18 +35,22 @@ Edge::Edge(const Edge& other) :
     fmt = other.fmt;
 }
 
-shared_ptr<Edge> Edge::format(const string& fmt) {
+Edge::~Edge() {
+    COUNT_EDGE--;
+}
+
+shared_ptr<Edge> Edge::format(const char* fmt) {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Edge>(shared_from_this());
 }
 
-int Edge::start() {
+auto Edge::start() -> int {
     CALL(FUNCTION);
     return start_;
 }
 
-int Edge::end() {
+auto Edge::end() -> int {
     CALL(FUNCTION);
     return end_;
 }
@@ -57,6 +65,11 @@ auto Edge::attr(const string& name) -> shared_ptr<Attribute> {
 auto Edge::start(int s) -> void {
     CALL(FUNCTION);
     start_ = s;
+}
+
+auto Edge::end(int e) -> void {
+    CALL(FUNCTION);
+    end_ = e;
 }
 
 void Edge::generate(bool re) {

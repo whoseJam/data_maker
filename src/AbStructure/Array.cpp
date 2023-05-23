@@ -12,8 +12,11 @@ using namespace std;
 
 namespace mk {
 
+int COUNT_ARRAY;
+
 Array::Array() {
     CALL(FUNCTION);
+    COUNT_ARRAY++;
     fmt = "$x ";
 }
 
@@ -21,6 +24,7 @@ Array::Array(const Array& other) :
     Node(other), 
     Formatable(other) {
     CALL(FUNCTION);
+    COUNT_ARRAY++;
     callback_before_generate = other.callback_before_generate;
     callback_when_generating = other.callback_when_generating;
     callback_after_generate = other.callback_after_generate;
@@ -32,11 +36,8 @@ Array::Array(const Array& other) :
         elements.push_back(ele->clone(0));
 }
 
-static int array_cnt = 0;
 Array::~Array() {
-#ifdef DELETE_CHECK
-    cout << "delete array " << ++array_cnt << "\n";
-#endif
+    COUNT_ARRAY--;
 }
 
 auto Array::length(int len) -> shared_ptr<Array> {
@@ -58,7 +59,7 @@ auto Array::fill(shared_ptr<Node> ele) -> shared_ptr<Array> {
     return dynamic_pointer_cast<Array>(shared_from_this());
 }
 
-auto Array::format(const string& fmt) -> shared_ptr<Array> {
+auto Array::format(const char* fmt) -> shared_ptr<Array> {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Array>(shared_from_this());

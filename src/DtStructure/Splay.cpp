@@ -3,6 +3,7 @@
 
 namespace mk {
 
-SplayHandle::SplayHandle() : Handle("SplayHandle") {}
+int COUNT_SPLAY = 0;
+int COUNT_SPLAYNODE = 0;
 
 }

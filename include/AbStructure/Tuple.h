@@ -10,9 +10,10 @@
 #include "Define.h"
 #include "Logger.h"
 #include "Format.h"
-#include "HashMap.h"
 
 namespace mk {
+
+extern int COUNT_TUPLE;
 
 class Tuple : 
     public Node, 
@@ -23,7 +24,7 @@ public:
     Tuple(const Tuple& other);
     virtual ~Tuple();
     auto append(std::shared_ptr<Node> ele) -> std::shared_ptr<Tuple>;
-    auto format(const std::string& fmt) -> std::shared_ptr<Tuple>;
+    auto format(const char* fmt) -> std::shared_ptr<Tuple>;
     auto before_generate(std::function<void(std::shared_ptr<Tuple>)>) -> std::shared_ptr<Tuple>;
     auto when_generating(std::function<void(std::shared_ptr<Tuple>, int)>) -> std::shared_ptr<Tuple>;
     auto after_generate(std::function<void(std::shared_ptr<Tuple>)>) -> std::shared_ptr<Tuple>;

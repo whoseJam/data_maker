@@ -12,6 +12,6 @@ include_directories(../../include/Utility)
 
 # aux_source_directory(. DTSTRUCTURE_SRC_LIST)
 
-set(DTSTRUCTURE_SRC_LIST HashMap.cpp)
+set(DTSTRUCTURE_SRC_LIST HashMap.cpp Splay.cpp ETT.cpp)
 
 add_library(${PROJECT_NAME} ${DTSTRUCTURE_SRC_LIST})

@@ -8,7 +8,18 @@
 
 namespace mk {
 
+#define CONSOLE(expr) \
+    do { \
+        pause_service(); \
+        expr; \
+        start_service(); \
+    } while(0);
+
 using Genfun = std::function<void()>;
+
+auto start_service(const std::string& path) -> void;
+auto start_service() -> void;
+auto pause_service() -> void;
 
 class IO :
     public std::enable_shared_from_this<IO> {
@@ -22,6 +33,7 @@ public:
     std::shared_ptr<IO> output_suffix(const std::string& str);
     std::shared_ptr<IO> working_directory(const std::string& str);
     std::shared_ptr<IO> skip_generate_existing_data();
+    auto debug() -> std::shared_ptr<IO>;
     void generate();
 private:
     struct IOPack {
@@ -38,6 +50,7 @@ private:
     
     std::string working_dir;
     bool skip_exist_data;
+    bool debug_;
 };
 
 std::shared_ptr<IO> standard_io();

@@ -13,8 +13,11 @@ using namespace Random;
 
 namespace mk {
 
+int COUNT_INTEGER = 0;
+
 Integer::Integer() {
     CALL(FUNCTION);
+    COUNT_INTEGER++;
     status = EMPTY;
     fmt = "$x";
 }
@@ -23,21 +26,18 @@ Integer::Integer(const Integer& other) :
     Node(other),
     Formatable(other) {
     CALL(FUNCTION);
+    COUNT_INTEGER++;
     if (other.l) l = dynamic_pointer_cast<Integer>(other.l->clone(0));
     if (other.r) r = dynamic_pointer_cast<Integer>(other.r->clone(0));
     if (other.op) op = dynamic_pointer_cast<Operator<Integer>>(other.op->clone(0));
     status = other.status;
     int_val = other.int_val;
-    if (debug) cout<<"Clone Len\n";
     if (other.ptr_val) ptr_val = dynamic_pointer_cast<Integer>(other.ptr_val->clone(0));
     fmt = other.fmt;
 }
 
-static int delete_cnt = 0;
 Integer::~Integer() {
-#ifdef DELETE_CHECK
-    cout << "delete integer " << ++delete_cnt << "\n";
-#endif
+    COUNT_INTEGER--;
 }
 
 auto Integer::calculate(shared_ptr<Operator<Integer>> op) -> shared_ptr<Integer> {
@@ -72,7 +72,7 @@ auto Integer::upper_bound(shared_ptr<Integer> r) -> shared_ptr<Integer> {
     return dynamic_pointer_cast<Integer>(shared_from_this());
 }
 
-auto Integer::format(const string& fmt) -> shared_ptr<Integer> {
+auto Integer::format(const char* fmt) -> shared_ptr<Integer> {
     CALL(FUNCTION);
     this->fmt = fmt;
     return dynamic_pointer_cast<Integer>(shared_from_this());

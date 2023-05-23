@@ -110,6 +110,7 @@ struct Longest1 : public Mergeable {
 };
 
 TEST(SplayTest, BasicInsert) {
+    {
     auto splay = make_shared<Splay<Sum>>();
     splay->insert_after(0, Sum(1));     // [1]
     splay->insert_after(0, Sum(2));     // [2, 1]
@@ -129,9 +130,13 @@ TEST(SplayTest, BasicInsert) {
     ASSERT_EQ(splay->query_sum(2, 3)->sum, 10);
     ASSERT_EQ(splay->query_sum(3, 4)->sum, 9);
     ASSERT_EQ(splay->query_sum(2, 4)->sum, 17);
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, BasicRemove) {
+    {
     auto splay = make_shared<Splay<Sum>>();
     splay->insert_after(0, Sum(1));
     splay->insert_after(1, Sum(2));
@@ -150,9 +155,13 @@ TEST(SplayTest, BasicRemove) {
     splay->remove(4);                   // [1, 3, 5]
     ASSERT_EQ(splay->size(), 3);
     ASSERT_EQ(splay->query_sum(2, 3)->sum, 8);
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, NotMergeable) {
+    {
     auto splay = make_shared<Splay<Val, Add>>();
     splay->insert_after(0, Val(1));     // [1]
     splay->insert_after(1, Val(2));     // [1, 2]
@@ -169,9 +178,13 @@ TEST(SplayTest, NotMergeable) {
     ASSERT_EQ(splay->query_info(2)->val, 5);
     ASSERT_EQ(splay->query_info(3)->val, 6);
     ASSERT_EQ(splay->query_info(1)->val, 4);
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, BasicSplit) {
+    {
     auto splay = make_shared<Splay<Val, Add>>();
     for (int i = 1; i <= 10; i++) {
         splay->insert_after(splay->size(), Val(i));
@@ -191,9 +204,13 @@ TEST(SplayTest, BasicSplit) {
         for (int i = 1; i <= 10; i++)
             ASSERT_EQ(splay->query_info(i)->val, ans[i - 1]);
     }
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, BasicHandle) {
+    {
     auto splay = make_shared<Splay<Val, Add>>();
     shared_ptr<SplayHandle> h, t;
     for (int i = 1; i <= 10; i++) {
@@ -206,9 +223,13 @@ TEST(SplayTest, BasicHandle) {
         for (int i = 1; i <= 10; i++)
             ASSERT_EQ(splay->query_info(i)->val, ans[i - 1]);
     }
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, StrongTestLongest1) {
+    {
     int n = 1000;
     vector<int> check; check.resize(n);
     auto splay = make_shared<Splay<Longest1>>();
@@ -235,9 +256,13 @@ TEST(SplayTest, StrongTestLongest1) {
             splay->insert(pos, Longest1(to));
         }
     }
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, StrongTestRevAndXorAndMin) {
+    {
     int n = 1000;
     vector<int> check; check.resize(n);
     auto splay = make_shared<Splay<XorSumAndMin, Rev>>();
@@ -267,9 +292,13 @@ TEST(SplayTest, StrongTestRevAndXorAndMin) {
             splay->insert(l, r, Rev(true));
         }
     }
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 TEST(SplayTest, BasicComparable) {
+    {
     auto splay = make_shared<Splay<Int>>();
     auto v1 = splay->insert(Int(1));
     auto v5 = splay->insert(Int(5));
@@ -285,6 +314,9 @@ TEST(SplayTest, BasicComparable) {
     ASSERT_EQ(splay->rank(v2), 2);
     ASSERT_EQ(splay->rank(v3), 3);
     ASSERT_EQ(v3->same(), 2);
+    }
+    ASSERT_EQ(COUNT_SPLAY, 0);
+    ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
 int main(int argc, char **argv) {

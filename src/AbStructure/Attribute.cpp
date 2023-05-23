@@ -12,23 +12,25 @@ using namespace std;
 
 namespace mk {
 
+int COUNT_ATTRIBUTE = 0;
+
 Attribute::Attribute() {
     CALL(FUNCTION);
+    COUNT_ATTRIBUTE++;
     key = "UNSET";
 }
 
 Attribute::Attribute(const Attribute& other) :
     Node(other) {
     CALL(FUNCTION);
+    COUNT_ATTRIBUTE++;
     if (!other.val) MESSAGE("Attribute", NEED("value"));
     key = other.key;
     val = other.val->clone(0);
 }
 
 Attribute::~Attribute() {
-#ifdef DELETE_CHECK
-    cout << "delete attribute\n";
-#endif
+    COUNT_ATTRIBUTE--;
 }
 
 /*

@@ -45,15 +45,10 @@ TEST(ArrayTest, BasicArray) {
             ele_is_same &= (cur == arr->get<Integer>(0)->value());
         }
         ASSERT_FALSE(ele_is_same);
+        CLEAR_ALL;
     }
-}
-
-TEST(ArrayTest, ArrayWithSameLength) {
-    // auto l = integer(5, 10);
-    // auto a = mk::array(l, integer(1, 5));
-    // auto b = mk::array(l, integer(1, 5));
-    // BUILD(a); cout<<"\n";
-    // BUILD(b);
+    ASSERT_EQ(COUNT_ARRAY, 0);
+    ASSERT_EQ(COUNT_INTEGER, 0);
 }
 
 TEST(ArrayTest, TwoDimensionArray) {
@@ -152,9 +147,13 @@ TEST(ArrayTest, TwoDimensionArray) {
         ASSERT_TRUE(same_length);
         ASSERT_TRUE(col_is_same);
     }
+    CLEAR_ALL;
+    ASSERT_EQ(COUNT_ARRAY, 0);
+    ASSERT_EQ(COUNT_INTEGER, 0);
 }
 
 TEST(ArrayTest, ElementInAlessThanThatInB) {
+    {
     using namespace Random;
     auto len = integer(5, 10);
     len->debug = true;
@@ -185,6 +184,10 @@ TEST(ArrayTest, ElementInAlessThanThatInB) {
         diff_ab_length_between_multicases->insert(v(a_arr->length()));
     }
     ASSERT_TRUE(diff_ab_length_between_multicases->query_different() > 1);
+    }
+    CLEAR_ALL;
+    ASSERT_EQ(COUNT_ARRAY, 0);
+    ASSERT_EQ(COUNT_INTEGER, 0);
 }
 
 int main(int argc, char **argv) {
