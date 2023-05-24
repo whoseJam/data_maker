@@ -6,7 +6,7 @@
 #include <string>
 #include <memory>
 
-#define DEBUG
+// #define DEBUG
 
 inline std::string className(const std::string& prettyFunction) {
     size_t colons = prettyFunction.find("::");
@@ -23,7 +23,7 @@ inline std::string className(const std::string& prettyFunction) {
 #ifdef DEBUG
     #define CALL(func) Call guard(func);
 #else
-    #define CALL(class, func)
+    #define CALL(func)
 #endif
 
 namespace mk {

@@ -7,6 +7,7 @@
 #include "Dtstructure.h"
 #include "Splay.h"
 #include "Random.h"
+#include "super_splay.cpp"
 
 using namespace mk;
 using namespace std;
@@ -320,13 +321,14 @@ TEST(SplayTest, BasicComparable) {
 }
 
 int mk::DEBUGCNT = 0;
-Splay<bool> splay;
+
 TEST(SplayTest, PressureTest) {
     {
+    auto splay = make_shared<Splay<Sum, Add>>();
     int n = 10000;
     // Splay<XorSumAndMin, Rev> splay;
     for (int i = 0; i < n; i++)
-        splay.insert_after(i, true);
+        splay->insert_after(i, Sum(1));
     std::cout<<DEBUGCNT<<"\n";
     for (int i = 0; i < 30000; i++) {
         int type = rand_int(0, 1);
@@ -334,7 +336,7 @@ TEST(SplayTest, PressureTest) {
             int l = rand_int(1, n);
             int r = rand_int(1, n);
             if (l > r) swap(l, r);
-            auto q = splay.query_info(l);
+            splay->insert(l, r, Add(1));
         } else {
             int l = rand_int(1, n);
             int r = rand_int(1, n);
@@ -345,8 +347,28 @@ TEST(SplayTest, PressureTest) {
 
     }
     cout<<"debug cnt="<<DEBUGCNT<<"\n";
-    // ASSERT_EQ(COUNT_SPLAY, 0);
-    // ASSERT_EQ(COUNT_SPLAYNODE, 0);
+}
+
+TEST(SplayTest, SuperPressure) {
+    tr.pushDown=pushDown;
+	tr.outputFunc=output;
+	tr.lessThan=cmp;
+	tr.equalTo=eq;
+	int n=10000,m=30000;
+	for(int i=1;i<=n;i++){
+        auto tmp = new VInfo();
+        tmp->val = i;
+		tr.Insert(tmp,tr.BY_ADDRESS);
+	}
+	cout<<"cnt="<<cnt<<"\n";
+	for(int i=1;i<=m;i++){
+		int l=R(1,n);
+		int r=R(1,n);
+		if(l>r)swap(l,r);
+		tr.RangeChange(l,r,pushRev);
+	}
+	cout<<"cnt="<<cnt<<"\n";
+//	tr.Output();
 }
 
 int main(int argc, char **argv) {

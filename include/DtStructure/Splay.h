@@ -158,7 +158,6 @@ struct SplayNode :
     template<typename U>
     struct push_up_helper<U, true> {
         void call(SplayNode* node) {
-            CALL(FUNCTION);
             node->sum_ = T();
             if (node->ch_[0])
                 node->sum_.merge(&(node->ch_[0]->sum_));
@@ -245,7 +244,7 @@ public:
     }
     ~Splay() {
         COUNT_SPLAY--;
-        //if (root_) delete root_;
+        if (root_) delete root_;
     }
     auto insert(const T& info) -> SplayHandle*;
     auto insert(int l, int r, const L& tag) -> void;
@@ -278,12 +277,7 @@ private:
     auto find_kth_max(SplayNode* cur, int k) -> SplayNode*;
     auto find_root_prev() -> SplayNode*;
     auto find_root_next() -> SplayNode*;
-    auto my_malloc(const T& info) -> SplayNode* {
-        pool[cnt] = SplayNode(info);
-        return &pool[cnt++];
-    }
     SplayNode* root_;
-    std::array<SplayNode, 10240> pool;
     int cnt;
 };
 
@@ -454,24 +448,24 @@ auto Splay<T, L>::insert_after(int k, const T& info) -> SplayHandle* {
     auto prev = find_kth_min(root_, k);
     auto next = find_kth_min(root_, k + 1);
     if (!prev && !next) {
-        root_ = my_malloc(info);
+        root_ = new SplayNode(info);
         root_->push_up();
         return root_;
     } else if (!prev) {
         splay(next, root_);
-        root_->insert_child(my_malloc(info), 0); 
+        root_->insert_child(new SplayNode(info), 0); 
         root_->ch_[0]->push_up();
         root_->push_up();
         return root_->child(0); 
     } else if (!next) {
         splay(prev, root_);
-        root_->insert_child(my_malloc(info), 1);
+        root_->insert_child(new SplayNode(info), 1);
         root_->ch_[1]->push_up(); 
         root_->push_up();
         return root_->ch_[1]; 
     }
     splay(prev, root_); splay(next, root_->child(1));
-    root_->child(1)->insert_child(my_malloc(info), 0);
+    root_->child(1)->insert_child(new SplayNode(info), 0);
     root_->child(1)->child(0)->push_up();
     root_->child(1)->push_up();
     root_->push_up();
