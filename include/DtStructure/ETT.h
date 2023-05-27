@@ -1,6 +1,7 @@
 #ifndef ETT_H
 #define ETT_H
 
+#include <cstddef>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -28,29 +29,8 @@ struct ETTHandle : public Handle {
 
 namespace Hidden {
 
-template<typename L, bool CHECKER = std::is_base_of_v<Lazytag, L>>
-struct ETTTag;
 template<typename L>
-struct ETTTag<L, false> : public Lazytag {
-    bool rev;
-    ETTTag() : rev(false) { COUNT_ETTTAG++; }
-    ETTTag(bool r) : rev(r) { COUNT_ETTTAG++; }
-    ETTTag(const ETTTag& other) : rev(other.rev) { COUNT_ETTTAG++; }
-    ~ETTTag() { COUNT_ETTTAG--; }
-    virtual auto push(Lazytag* tag, Handle* handle) -> void override {
-        CALL(FUNCTION);
-        auto ett_tag = dynamic_cast<ETTTag*>(tag);
-        if (ett_tag) {
-            rev ^= ett_tag->rev;
-            if (ett_tag->rev) {
-                auto splay = dynamic_cast<SplayHandle*>(handle);
-                splay->swap_child();
-            }
-        }
-    }
-};
-template<typename L>
-struct ETTTag<L, true> : public Lazytag {
+struct ETTTag : public Lazytag {
     L tag;
     bool rev;
     ETTTag() : rev(false) { COUNT_ETTTAG++; }
@@ -58,59 +38,38 @@ struct ETTTag<L, true> : public Lazytag {
     ETTTag(bool r) : rev(r) { COUNT_ETTTAG++; }
     ETTTag(const ETTTag& other) : tag(other.tag), rev(other.rev) { COUNT_ETTTAG++; }
     ~ETTTag() { COUNT_ETTTAG--; }
-    virtual auto push(Lazytag* tag, Handle* handle) -> void override {
-        CALL(FUNCTION);
-        auto ett_tag = dynamic_cast<ETTTag*>(tag);
-        if (ett_tag) {
-            rev ^= ett_tag->rev;
-            if (ett_tag->rev) {
-                auto splay = dynamic_cast<SplayHandle*>(handle);
-                splay->swap_child();
-            }
-            this->tag.push(&(ett_tag->tag), handle);
+    template<typename U, typename CHECKER = 
+        std::conditional_t<
+            lazytag_is_pushable_with_handle_v<L, SplayHandle>, std::integral_constant<int, 1>, 
+        std::conditional_t<
+            lazytag_is_pushable_without_handle_v<L>,           std::integral_constant<int, 2>, 
+                                                               std::integral_constant<int, 3>>>>
+    struct push_helper;
+    template<typename U>
+    struct push_helper<U, std::integral_constant<int, 1>> {
+        auto call(ETTTag* cur, ETTTag* other, SplayHandle* handle) -> void {
+            cur->tag.push(&(other->tag), handle);
         }
+    };
+    template<typename U>
+    struct push_helper<U, std::integral_constant<int, 2>> {
+        auto call(ETTTag* cur, ETTTag* other, SplayHandle* handle) -> void {
+            cur->tag.push(&(other->tag));
+        }
+    };
+    template<typename U>
+    struct push_helper<U, std::integral_constant<int, 3>> {
+        auto call(ETTTag* cur, ETTTag* other, SplayHandle* handle) -> void {}
+    };
+    auto push(ETTTag* other, SplayHandle* handle) -> void {
+        rev ^= other->rev;
+        if (other->rev) handle->swap_child();
+        push_helper<L>().call(this, other, handle);
     }
 };
 
-
-template<typename T, typename L, 
-    bool MCHECKER = std::is_base_of_v<Mergeable, T>, 
-    bool PCHECKER = std::is_base_of_v<Pushable, T> && std::is_base_of_v<Lazytag, L>>
-struct ETTInfo;
 template<typename T, typename L>
-struct ETTInfo<T, L, true, true> : 
-    public Mergeable,
-    public Pushable,
-    public ETTHandle,
-    public std::enable_shared_from_this<ETTInfo<T, L>> {
-    int x, y, ne, nv;
-    T info;
-    ETTInfo() : x(-1), y(-1), nv(0), ne(0) { COUNT_ETTINFO++; }
-    ETTInfo(const T& info, int x) : info(info), x(x), y(-1), nv(1), ne(0) { COUNT_ETTINFO++; }
-    ETTInfo(const T& info, int x, int y) : info(info), x(x), y(y), nv(0), ne(1) { COUNT_ETTINFO++; }
-    ETTInfo(const ETTInfo& other) : x(other.x), y(other.y), ne(other.ne), nv(other.nv), info(other.info) { COUNT_ETTINFO++; } 
-    ~ETTInfo() { COUNT_ETTINFO--; }
-    virtual auto edge_size() -> int override { return ne; }
-    virtual auto vertex_size() -> int override { return nv; }
-    virtual auto merge(Mergeable* o) -> void override {
-        CALL(FUNCTION);
-        auto other = dynamic_cast<ETTInfo<T, L>*>(o);
-        if (other) {
-            x = other->x;
-            y = other->y;
-            ne += other->ne;
-            nv += other->nv;
-            info.merge(&(other->info));
-        }
-    }
-    virtual auto push(Lazytag* tag, Handle* handle) -> void override {
-        CALL(FUNCTION);
-        auto ett_tag = dynamic_cast<ETTTag<L>*>(tag);
-        info.push(&(ett_tag->tag), this);
-    }
-};
-template<typename T, typename L>
-struct ETTInfo<T, L, true, false> : 
+struct ETTInfo : 
     public Mergeable,
     public ETTHandle {
     int x, y, ne, nv;
@@ -122,78 +81,62 @@ struct ETTInfo<T, L, true, false> :
     ~ETTInfo() { COUNT_ETTINFO--; }
     virtual auto edge_size() -> int override { return ne; }
     virtual auto vertex_size() -> int override { return nv; }
-    virtual auto merge(Mergeable* o) -> void override {
-        CALL(FUNCTION);
-        auto other = dynamic_cast<ETTInfo<T, L>*>(o);
-        if (other) {
-            x = other->x;
-            y = other->y;
-            ne += other->ne;
-            nv += other->nv;
-            info.merge(&(other->info));
-        }
-    }
-};
 
-template<typename T, typename L>
-struct ETTInfo<T, L, false, true> : 
-    public Mergeable,
-    public Pushable,
-    public ETTHandle {
-    int x, y, ne, nv;
-    T info;
-    ETTInfo() : x(-1), y(-1), nv(0), ne(0) { COUNT_ETTINFO++; }
-    ETTInfo(const T& info, int x) : info(info), x(x), y(-1), nv(1), ne(0) { COUNT_ETTINFO++; }
-    ETTInfo(const T& info, int x, int y) : info(std::move(info)), x(x), y(y), nv(0), ne(1) { COUNT_ETTINFO++; }
-    ETTInfo(const ETTInfo& other) : x(other.x), y(other.y), nv(other.nv), ne(other.ne), info(other.info) { COUNT_ETTINFO++; } 
-    ~ETTInfo() { COUNT_ETTINFO--; }
-    virtual auto edge_size() -> int override { return ne; }
-    virtual auto vertex_size() -> int override { return nv; }
-    virtual auto merge(Mergeable* o) -> void override {
-        CALL(FUNCTION);
-        auto other = dynamic_cast<ETTInfo<T, L>*>(o);
-        if (other) {
-            x = other->x;
-            y = other->y;
-            ne += other->ne;
-            nv += other->nv;
-        }
-    }
-    virtual auto push(Lazytag* tag, Handle* handle) -> void override {
-        CALL(FUNCTION);
-        auto ett_tag = dynamic_cast<ETTTag<L, true>*>(tag);
-        info.push(&(ett_tag->tag), this);
-    }
-};
+    template<typename U, typename CASE = 
+        std::conditional_t<
+            info_is_mergeable_with_handle_v<U, ETTHandle>, std::integral_constant<int, 1>, 
+        std::conditional_t<
+            info_is_mergeable_without_handle_v<U>,         std::integral_constant<int, 2>, 
+                                                           std::integral_constant<int, 3>>>>
+    struct merge_helper;
+    template<typename U>
+    struct merge_helper<U, std::integral_constant<int, 1>> {
+        auto call(ETTInfo* cur, ETTInfo* other) { cur->info.merge(&(other->info), other); } 
+    };  // T合并时需要用到全部参数
+    template<typename U>
+    struct merge_helper<U, std::integral_constant<int, 2>> {
+        auto call(ETTInfo* cur, ETTInfo* other) { cur->info.merge(&(other->info)); } 
+    };  // T合并时只需要用到另一个节点的用户定义参数即可
+    template<typename U>
+    struct merge_helper<U, std::integral_constant<int, 3>> {
+        auto call(ETTInfo* cur, ETTInfo* other) {} 
+    };  // T是不可合并的
 
-template<typename T, typename L>
-struct ETTInfo<T, L, false, false> : 
-    public Mergeable,
-    public ETTHandle {
-    int x, y, ne, nv;
-    T info;
-    ETTInfo() : x(-1), y(-1), nv(0), ne(0) { COUNT_ETTINFO++; }
-    ETTInfo(const T& info, int x) : info(info), x(x), y(-1), nv(1), ne(0) { COUNT_ETTINFO++; }
-    ETTInfo(const T& info, int x, int y) : info(info), x(x), y(y), nv(0), ne(1) { COUNT_ETTINFO++; }
-    ETTInfo(const ETTInfo& other) : x(other.x), y(other.y), ne(other.ne), nv(other.nv), info(other.info) { COUNT_ETTINFO++; } 
-    ~ETTInfo() { COUNT_ETTINFO--; }
-    virtual auto edge_size() -> int override { return ne; }
-    virtual auto vertex_size() -> int override { return nv; }
-    virtual auto merge(Mergeable* o) -> void override {
-        CALL(FUNCTION);
-        auto other = dynamic_cast<ETTInfo<T, L>*>(o);
-        if (other) {
-            x = other->x;
-            y = other->y;
-            ne += other->ne;
-            nv += other->nv;
-        }
+    template<typename U, typename R, typename CASE = 
+        std::conditional_t<
+            info_is_pushable_with_handle_v<U, R, ETTHandle>, std::integral_constant<int, 1>, 
+        std::conditional_t<
+            info_is_pushable_without_handle_v<U, R>,         std::integral_constant<int, 2>, 
+                                                             std::integral_constant<int, 3>>>>
+    struct push_helper;
+    template<typename U, typename R>
+    struct push_helper<U, R, std::integral_constant<int, 1>> {
+        auto call(ETTInfo* cur, L* other) { cur->info.push(other, cur); } 
+    };  // L push -> T 时需要用到全部参数
+    template<typename U, typename R>
+    struct push_helper<U, R, std::integral_constant<int, 2>> {
+        auto call(ETTInfo* cur, L* other) { cur->info.push(other); } 
+    };  // L push -> T 时只需要用到另一个节点的用户定义参数即可
+    template<typename U, typename R>
+    struct push_helper<U, R, std::integral_constant<int, 3>> {
+        auto call(ETTInfo* cur, L* other) {}
+    };  // T是不可push的
+    
+    auto merge(ETTInfo* other) -> void {
+        x = other->x;
+        y = other->y;
+        ne += other->ne;
+        nv += other->nv;
+        merge_helper<T>().call(this, other);
+    }
+    auto push(ETTTag<L>* other, SplayHandle* handle) -> void {
+        push_helper<T, L>().call(this, &(other->tag));
     }
 };
 
 }
 
-template<typename T, typename L = bool>
+template<typename T, typename L = std::nullptr_t>
 class ETT {
 public:
     ETT();
@@ -211,7 +154,7 @@ public:
     auto new_node(int u) -> void;
     auto new_node(int u, const T& info) -> void;
     auto clear() -> void;
-private:
+public:
 
     auto make_edge(int x, int y) -> std::pair<int, int> {
         return std::make_pair(std::min(x, y), std::max(x, y));
@@ -223,6 +166,7 @@ private:
     std::map<int, SplayType> eulers;
     std::map<std::pair<int, int>, std::pair<SplayHandle*, SplayHandle*>> emap;
     std::map<int, SplayHandle*> vmap;
+    static inline bool constexpr Test = info_is_pushable_with_handle_v<MyETTInfo, MyETTTag, SplayHandle>;
 };
 
 template<typename T, typename L>
@@ -444,7 +388,6 @@ Description:
 */
 template<typename T, typename L>
 auto ETT<T, L>::query_info(int u) -> T {
-    CALL(FUNCTION);
     auto iter = vmap.find(u);
     if (iter == vmap.end()) MESSAGE("ETT<T, L>", VERTEX_NOT_FOUND);
     auto handle = iter->second;
@@ -459,7 +402,6 @@ Description:
 */
 template<typename T, typename L>
 auto ETT<T, L>::insert(int u, const L& tag) -> void {
-    CALL(FUNCTION);
     auto iter = vmap.find(u);
     if (iter == vmap.end()) MESSAGE("ETT<T, L>", VERTEX_NOT_FOUND);
     auto handle = iter->second;

@@ -18,7 +18,7 @@ int fa[100005];
 
 void Case(int mnN, int mxN, int mnM, int mxM, int maxW) {
     {
-    auto ett = make_shared<ETT<bool>>();
+    ETT<bool> ett;
     auto n = integer(mnN, mxN);
     auto m = integer(mnM, mxM);
     auto optQ = mk::tuple(character('Q'), integer(1, n));
@@ -34,21 +34,21 @@ void Case(int mnN, int mxN, int mnM, int mxM, int maxW) {
     );
     auto opt_arr = mk::array(m, opt)->format("$x\n")
     ->before_generate([&](shared_ptr<Array> arr) {
-        ett->clear();
+        ett.clear();
         int n = track<Tree>(tr)->size();
         for (int i = 0; i < n; i++) {
-            ett->new_node(i + 1);
+            ett.new_node(i + 1);
             if (i%10000 == 0) CONSOLE(cout<<"node init = "<<i<<"\n");
         }
         int cnt = 0;
         for (auto& e : tr->edge_set()) {
-            ett->link(e->start() + 1, e->end() + 1);
+            ett.link(e->start() + 1, e->end() + 1);
             fa[e->end() + 1] = e->start() + 1;
             cnt++;
             if (cnt%10000 == 0) CONSOLE(cout<<"edge init = "<<cnt<<"\n");
         }
         CONSOLE(cout<<"before generate work finish\n");
-        ett->make_root(1); })
+        ett.make_root(1); })
     ->when_generating([&](shared_ptr<Array> This, int idx) {
         auto opt = This->get<Option>(idx);
         auto group = opt->get<Tuple>();
@@ -57,17 +57,17 @@ void Case(int mnN, int mxN, int mnM, int mxM, int maxW) {
         if (type == 'C') {
             auto x = group->get<Integer>(1);
             auto y = group->get<Integer>(2);
-            if (ett->is_root(x->value())) {
+            if (ett.is_root(x->value())) {
                 int old = x->value();
                 while (x->value() == old) {
                     x->value(rand_int(1, track<Integer>(n)->value()));
                 }
             }
-            while (ett->is_ancestor_of(x->value(), y->value())) {
+            while (x->value() == y->value() || ett.is_ancestor_of(x->value(), y->value())) {
                 y->value(rand_int(1, track<Integer>(n)->value()));
             }
-            ett->cut(x->value(), fa[x->value()]);
-            ett->link(y->value(), x->value());
+            ett.cut(x->value(), fa[x->value()]);
+            ett.link(y->value(), x->value());
             fa[x->value()] = y->value();
         } });
     auto pro = mk::tuple(

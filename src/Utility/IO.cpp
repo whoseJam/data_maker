@@ -178,6 +178,7 @@ void IO::generate() {
         sprintf(cmd, "rm %s", std_exec_path.c_str());
         system(cmd);
     } else {
+        pause_service();
         cout << "Warning : std no found\n";
     }
 }

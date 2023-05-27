@@ -7,7 +7,6 @@
 #include "Dtstructure.h"
 #include "Splay.h"
 #include "Random.h"
-#include "super_splay.cpp"
 
 using namespace mk;
 using namespace std;
@@ -19,8 +18,7 @@ struct Add : public Lazytag {
     int add;
     Add() : add(0) {}
     Add(int a) : add(a) {}
-    void push(Lazytag* o, Handle* h) override {
-        auto other = dynamic_cast<Add*>(o);
+    void push(Add* other) {
         add += other->add;
     }
 };
@@ -29,10 +27,9 @@ struct AddAndMul : public Lazytag {
     int k, b;
     AddAndMul() : k(1), b(0) {}
     AddAndMul(int k, int b) : k(k), b(b) {}
-    void push(Lazytag* o, Handle* h) override {
-        auto other = dynamic_cast<AddAndMul*>(o);
-        other->k *= k;
-        other->b *= k; other->b += b;
+    void push(AddAndMul* other) {
+        k *= other->k;
+        b *= other->b; b += other->b;
     }
 };
 
@@ -40,11 +37,9 @@ struct Rev : public Lazytag {
     bool rev;
     Rev() : rev(0) {}
     Rev(bool r) : rev(r) {}
-    void push(Lazytag* tag, Handle* handle) override {
-        auto other = dynamic_cast<Rev*>(tag);
+    void push(Rev* other, SplayHandle* handle) {
         rev ^= other->rev;
-        auto sp = dynamic_cast<SplayHandle*>(handle);
-        if (other->rev) sp->swap_child();
+        if (other->rev) handle->swap_child();
     }
 };
 
@@ -53,18 +48,17 @@ struct Int : public Comparable {
     int val;
     Int() : val(0) {}
     Int(int v) : val(v) {}
-    int compare_to(Comparable* o) override {
-        int v = dynamic_cast<Int*>(o)->val;
-        return val - v;
+    int compare_to(Int* other) {
+        return val - other->val;
     }
 };
 
-struct Val : public Info, public Pushable {
+struct Val : public Pushable {
     int val;
     Val() : val(0) {}
     Val(int v) : val(v) {}
-    void push(Lazytag* tag, Handle* handle) override {
-        val += dynamic_cast<Add*>(tag)->add;
+    void push(Add* other) {
+        val += other->add;
     }
 };
 
@@ -72,14 +66,11 @@ struct Sum : public Mergeable, public Pushable {
     int sum;
     Sum() : sum(0) {}
     Sum(int v) : sum(v) {}
-    void merge(Mergeable* o) override {
-        auto other = dynamic_cast<Sum*>(o);
+    void merge(Sum* other) {
         sum += other->sum;
     }
-    void push(Lazytag* tag, Handle* handle) override {
-        auto hd = dynamic_cast<SplayHandle*>(handle);
-        auto add_tag = dynamic_cast<Add*>(tag);
-        sum += hd->size() * add_tag->add;
+    void push(Add* other, SplayHandle* handle) {
+        sum += handle->size() * other->add;
     }
 };
 
@@ -87,8 +78,7 @@ struct XorSumAndMin : public Mergeable {
     int sum, mn;
     XorSumAndMin() : sum(0), mn(inf) {}
     XorSumAndMin(int v) : sum(v), mn(v) {}
-    virtual void merge(Mergeable* o) override {
-        auto other = dynamic_cast<XorSumAndMin*>(o);
+    void merge(XorSumAndMin* other) {
         sum ^= other->sum;
         mn = min(mn, other->mn);
     }
@@ -101,8 +91,7 @@ struct Longest1 : public Mergeable {
     int right1;
     Longest1() : len(0), left1(0), right1(0), mxlen(0) {}
     Longest1(int v) : len(1), left1(v), right1(v), mxlen(v) {}
-    void merge(Mergeable* o) override {
-        auto other = dynamic_cast<Longest1*>(o);
+    void merge(Longest1* other) {
         mxlen = max(mxlen, max(other->mxlen, right1 + other->left1));
         left1 = (len == left1) ? left1 + other->left1 : left1;
         right1 = (other->len == other->right1) ? right1 + other->right1 : other->right1;
@@ -320,55 +309,28 @@ TEST(SplayTest, BasicComparable) {
     ASSERT_EQ(COUNT_SPLAYNODE, 0);
 }
 
-int mk::DEBUGCNT = 0;
-
 TEST(SplayTest, PressureTest) {
     {
-    auto splay = make_shared<Splay<Sum, Add>>();
-    int n = 10000;
-    // Splay<XorSumAndMin, Rev> splay;
+    int n = 100000;
+    Splay<Sum, Rev> splay;
     for (int i = 0; i < n; i++)
-        splay->insert_after(i, Sum(1));
-    std::cout<<DEBUGCNT<<"\n";
-    for (int i = 0; i < 30000; i++) {
+        splay.insert_after(i, Sum(1));
+    for (int i = 0; i < 300000; i++) {
         int type = rand_int(0, 1);
-        if (type == 0 || true) {
+        if (type == 0) {
             int l = rand_int(1, n);
             int r = rand_int(1, n);
             if (l > r) swap(l, r);
-            splay->insert(l, r, Add(1));
+            splay.insert(l, r, Rev(true));
         } else {
             int l = rand_int(1, n);
             int r = rand_int(1, n);
             if (l > r) swap(l, r);
-            // splay.insert(l, r, Rev(true));
+            splay.query_sum(l, r);
         }
     }
 
     }
-    cout<<"debug cnt="<<DEBUGCNT<<"\n";
-}
-
-TEST(SplayTest, SuperPressure) {
-    tr.pushDown=pushDown;
-	tr.outputFunc=output;
-	tr.lessThan=cmp;
-	tr.equalTo=eq;
-	int n=10000,m=30000;
-	for(int i=1;i<=n;i++){
-        auto tmp = new VInfo();
-        tmp->val = i;
-		tr.Insert(tmp,tr.BY_ADDRESS);
-	}
-	cout<<"cnt="<<cnt<<"\n";
-	for(int i=1;i<=m;i++){
-		int l=R(1,n);
-		int r=R(1,n);
-		if(l>r)swap(l,r);
-		tr.RangeChange(l,r,pushRev);
-	}
-	cout<<"cnt="<<cnt<<"\n";
-//	tr.Output();
 }
 
 int main(int argc, char **argv) {

@@ -2,11 +2,11 @@
 #define SPLAY_H
 
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <functional>
 
-#include "Debug.h"
 #include "Logger.h"
 #include "Dtstructure.h"
 
@@ -73,34 +73,6 @@ struct SplayNode :
         ch_[0] = other.ch_[0]; other.ch_[0] = nullptr;
         ch_[1] = other.ch_[1]; other.ch_[1] = nullptr;
     }
-    SplayNode& operator =(const SplayNode& other) {
-        if (&other == this) return *this;
-        COUNT_SPLAYNODE++;
-        info_ = other.info_;
-        sum_ = other.sum_;
-        tag_ = other.tag_;
-        same_ = other.same_;
-        size_ = other.size_;
-        diff_ = other.diff_;
-        fa_ = nullptr;
-        if (other.ch_[0]) ch_[0] = new SplayNode(*other.ch_[0]);
-        if (other.ch_[1]) ch_[1] = new SplayNode(*other.ch_[1]);
-        return *this;
-    }
-    SplayNode& operator =(SplayNode&& other) {
-        if (&other == this) return *this;
-        COUNT_SPLAYNODE++;
-        info_ = std::move(other.info_);
-        sum_ = std::move(other.sum_);
-        tag_ = std::move(other.tag_);
-        same_ = other.same_;
-        size_ = other.size_;
-        diff_ = other.diff_;
-        fa_ = other.fa_; other.fa_ = nullptr;
-        ch_[0] = other.ch_[0]; other.ch_[0] = nullptr;
-        ch_[1] = other.ch_[1]; other.ch_[1] = nullptr;
-        return *this;
-    }
     ~SplayNode() {
         COUNT_SPLAYNODE--;
         if (ch_[0]) delete ch_[0];
@@ -132,13 +104,11 @@ struct SplayNode :
     auto swap_child() -> void override { std::swap(ch_[0], ch_[1]); }
     auto child(int x) -> SplayNode*& { return ch_[x]; }
     auto insert_child(SplayNode* child, int type) -> void {
-        CALL(FUNCTION);
         if (ch_[type]) MESSAGE(CLASS, UNKNOWN);
         ch_[type] = child;
         child->fa_ = this;
     }
     auto remove_child(int type) -> void {
-        CALL(FUNCTION);
         if (ch_[type]) {
             ch_[type]->fa_ = nullptr;
             delete ch_[type];
@@ -146,17 +116,34 @@ struct SplayNode :
         }
     }
     auto remove_and_take_out_child(int type) -> SplayNode* {
-        CALL(FUNCTION);
         auto ans = ch_[type];
         ans->fa_ = nullptr;
         ch_[type] = nullptr;
         return ans;
     }
 
-    template<typename U, bool CHECKER = std::is_base_of_v<Mergeable, U>>
+    template<typename U, typename CASE = 
+        std::conditional_t<
+            info_is_mergeable_with_handle_v<U, SplayHandle>, std::integral_constant<int, 1>, 
+        std::conditional_t<
+            info_is_mergeable_without_handle_v<U>,           std::integral_constant<int, 2>, 
+                                                             std::integral_constant<int, 3>
+        >>
+    >
     struct push_up_helper;
     template<typename U>
-    struct push_up_helper<U, true> {
+    struct push_up_helper<U, std::integral_constant<int, 1>> {
+        void call(SplayNode* node) {
+            node->sum_ = T();
+            if (node->ch_[0])
+                node->sum_.merge(&(node->ch_[0]->sum_, node));
+            node->sum_.merge(&(node->info_));
+            if (node->ch_[1])
+                node->sum_.merge(&(node->ch_[1]->sum_, node));
+        }
+    };
+    template<typename U>
+    struct push_up_helper<U, std::integral_constant<int, 2>> {
         void call(SplayNode* node) {
             node->sum_ = T();
             if (node->ch_[0])
@@ -167,67 +154,89 @@ struct SplayNode :
         }
     };
     template<typename U>
-    struct push_up_helper<U, false> { void call(SplayNode* node) {} };
+    struct push_up_helper<U, std::integral_constant<int, 3>> { void call(SplayNode* node) {} };
     auto push_up() -> void {
-        CALL(FUNCTION);
         push_up_helper<T>().call(this);
         size_ = same_; diff_ = 1;
         if (ch_[0]) { size_ += ch_[0]->size_; diff_ += ch_[0]->diff_; }
         if (ch_[1]) { size_ += ch_[1]->size_; diff_ += ch_[1]->diff_; }
     }
+
     template<typename U, bool CHECKER = std::is_base_of_v<Lazytag, U>>
     struct push_down_helper;
     template<typename U>
     struct push_down_helper<U, true> {
         auto call(SplayNode* node) -> void {
-            CALL(FUNCTION);
             if (node->ch_[0]) node->ch_[0]->push_tag(node->tag_);
             if (node->ch_[1]) node->ch_[1]->push_tag(node->tag_);
             node->tag_ = L();
         }
     };
+
     template<typename U>
     struct push_down_helper<U, false> { auto call(SplayNode* node) -> void {} };
-    template<typename U, typename R, bool CHECKER = std::is_base_of_v<Pushable, U> && std::is_base_of_v<Lazytag, R>>
+    template<typename U, typename R, typename CASE = 
+        std::conditional_t<
+            info_is_pushable_with_handle_v<U, R, SplayHandle>, std::integral_constant<int, 1>, 
+        std::conditional_t<
+            info_is_pushable_without_handle_v<U, R>,           std::integral_constant<int, 2>, 
+                                                               std::integral_constant<int, 3>>>>
     struct push_to_info_helper;
     template<typename U, typename R>
-    struct push_to_info_helper<U, R, true> {
+    struct push_to_info_helper<U, R, std::integral_constant<int, 1>> {
         auto call(SplayNode* node, const L& tag) -> void {
-            CALL(FUNCTION);
             L& non_const_tag = const_cast<L&>(tag);
             node->info_.push(&non_const_tag, node);
             node->sum_.push(&non_const_tag, node);
         }
     };
     template<typename U, typename R>
-    struct push_to_info_helper<U, R, false> { auto call(SplayNode*, const L&) -> void {} };
-    template<typename U, bool CHECKER = std::is_base_of_v<Lazytag, U>>
+    struct push_to_info_helper<U, R, std::integral_constant<int, 2>> {
+        auto call(SplayNode* node, const L& tag) -> void {
+            L& non_const_tag = const_cast<L&>(tag);
+            node->info_.push(&non_const_tag);
+            node->sum_.push(&non_const_tag);
+        }
+    };
+    template<typename U, typename R>
+    struct push_to_info_helper<U, R, std::integral_constant<int, 3>> { auto call(SplayNode*, const L&) -> void {} };
+    
+    template<typename U, typename CASE = 
+        std::conditional_t<
+            lazytag_is_pushable_with_handle_v<U, SplayHandle>, std::integral_constant<int, 1>, 
+        std::conditional_t<
+            lazytag_is_pushable_without_handle_v<U>,           std::integral_constant<int, 2>, 
+                                                               std::integral_constant<int, 3>>>>
     struct push_to_tag_helper;
     template<typename U>
-    struct push_to_tag_helper<U, true> {
+    struct push_to_tag_helper<U, std::integral_constant<int, 1>> {
         auto call(SplayNode* node, const L& tag) -> void {
-            CALL(FUNCTION);
             L& non_const_tag = const_cast<L&>(tag);
             node->tag_.push(&non_const_tag, node);
         }
     };
     template<typename U>
-    struct push_to_tag_helper<U, false> { auto call(SplayNode* node, const L& tag) -> void {} };
+    struct push_to_tag_helper<U, std::integral_constant<int, 2>> {
+        auto call(SplayNode* node, const L& tag) -> void {
+            L& non_const_tag = const_cast<L&>(tag);
+            node->tag_.push(&non_const_tag);
+        }
+    };
+    template<typename U>
+    struct push_to_tag_helper<U, std::integral_constant<int, 3>> { auto call(SplayNode* node, const L& tag) -> void {} };
 
     auto push_down() -> void {
-        CALL(FUNCTION);
         push_down_helper<L>().call(this);
     }
     auto push_tag(const L& tag) {
-        CALL(FUNCTION);
         push_to_info_helper<T, L>().call(this, tag);
         push_to_tag_helper<L>().call(this, tag);
     }
 };
 
 }   // HIDEN END
-extern bool gdebug;
-template<typename T, typename L = Empty>
+
+template<typename T, typename L = std::nullptr_t>
 class Splay {
 public:
     using SplayNode = Hidden::SplayNode<T, L>;
@@ -299,14 +308,12 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::size() -> int {
-    CALL(FUNCTION);
     if (root_) return root_->size_;
     return 0;
 }
 
 template<typename T, typename L>
 auto Splay<T, L>::rotate(SplayNode* x, SplayNode*& rt) -> void {
-    CALL(FUNCTION);
     auto y = x->fa_;
     auto z = y->fa_;
     int l = (y->ch_[0]) != x, r = l^1;
@@ -321,7 +328,6 @@ auto Splay<T, L>::rotate(SplayNode* x, SplayNode*& rt) -> void {
 
 template<typename T, typename L>
 auto Splay<T, L>::splay(SplayNode* x, SplayNode*& rt) -> void {
-    CALL(FUNCTION);
     auto ck = x;
     while (ck != rt && ck->fa_) ck = ck->fa_;
     if (ck != rt) MESSAGE("Splay<T, L>", UNKNOWN);
@@ -443,7 +449,6 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::insert_after(int k, const T& info) -> SplayHandle* {
-    CALL(FUNCTION);
     if (k < 0 || k > size()) MESSAGE("Splay<T, L>", ENSURE("0 <= k <= size"));
     auto prev = find_kth_min(root_, k);
     auto next = find_kth_min(root_, k + 1);
@@ -456,7 +461,7 @@ auto Splay<T, L>::insert_after(int k, const T& info) -> SplayHandle* {
         root_->insert_child(new SplayNode(info), 0); 
         root_->ch_[0]->push_up();
         root_->push_up();
-        return root_->child(0); 
+        return root_->ch_[0]; 
     } else if (!next) {
         splay(prev, root_);
         root_->insert_child(new SplayNode(info), 1);
@@ -705,7 +710,6 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::query_sum(int l, int r) -> T {
-    CALL(FUNCTION);
     if (!std::is_base_of_v<Mergeable, T>) MESSAGE("Splay<T, L>", UNABLE("Mergeable"));
     if (l > r) MESSAGE("Splay<T, L>", ENSURE("l <= r"));
     if (l < 1 || l > size()) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
@@ -770,7 +774,6 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::query_info(int k) -> T {
-    CALL(FUNCTION);
     auto target = find_kth_min(root_, k);
     if (!target) MESSAGE("Splay<T, L>", ENSURE("1 <= l <= size"));
     splay(target, root_);
@@ -781,13 +784,10 @@ auto Splay<T, L>::query_info(int k) -> T {
 Description:
 查询Splay中从小到大第k个元素.
 */
-extern int DEBUGCNT;
 template<typename T, typename L>
 auto Splay<T, L>::find_kth_min(SplayNode* cur, int k) -> SplayNode* {
-    CALL(FUNCTION);
     if (!cur) return nullptr;
     cur->push_down();
-    DEBUGCNT++;
     int left = (cur->ch_[0]) ? (cur->ch_[0]->size_) : 0;
     if (left + 1 <= k && k <= left + (cur->same_)) return cur;
     if (left >= k) return find_kth_min(cur->ch_[0], k);
@@ -800,7 +800,6 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::find_kth_max(SplayNode* cur, int k) -> SplayNode* {
-    CALL(FUNCTION);
     if (!cur) return nullptr;
     cur->push_down();
     int right = (cur->ch_[1]) ? (cur->ch_[1]->size_) : 0;
@@ -815,7 +814,6 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::find_root_prev() -> SplayNode* {
-    CALL(FUNCTION);
     auto u = root_->ch_[0];
     if (!u) return u;
     while (u->ch_[1]) {
@@ -830,7 +828,6 @@ Description:
 */
 template<typename T, typename L>
 auto Splay<T, L>::find_root_next() -> SplayNode* {
-    CALL(FUNCTION);
     auto u = root_->ch_[1];
     if (!u) return u;
     while (u->ch_[0]) {
@@ -846,7 +843,6 @@ x的排名定义为比x小的元素的个数+1.
 */
 template<typename T, typename L>
 auto Splay<T, L>::rank(SplayHandle* x) -> int {
-    CALL(FUNCTION);
     auto target = reinterpret_cast<SplayNode*>(x);
     splay(target, root_);
     return root_->ch_[0] ? root_->ch_[0]->size_ + 1 : 1;

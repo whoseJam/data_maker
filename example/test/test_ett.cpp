@@ -17,23 +17,17 @@ struct Add : public Lazytag {
     int add;
     Add() : add(0) {}
     Add(int a) : add(a) {}
-    virtual void push(Lazytag* tag, Handle* handle) override {
-        auto add_tag = dynamic_cast<Add*>(tag);
-        if (add_tag) {
-            add += add_tag->add;
-        }
+    void push(Add* other) {
+        add += other->add;
     }
 };
 
-struct Val : public Info, public Pushable {
+struct Val : public Pushable {
     int val;
     Val() : val(0) {}
     Val(int v) : val(v) {}
-    virtual void push(Lazytag* tag, Handle* handle) override {
-        auto add_tag = dynamic_cast<Add*>(tag);
-        if (add_tag) {
-            val += add_tag->add;
-        }
+    void push(Add* other) {
+        val += other->add;
     }
 };
 
@@ -42,18 +36,11 @@ struct Sum : public Mergeable, public Pushable {
     int sum;
     Sum() : sum(0) {}
     Sum(int s) : sum(s) {}
-    void merge(Mergeable* info) override {
-        auto sum_info = dynamic_cast<Sum*>(info);
-        if (sum_info) {
-            sum += sum_info->sum;
-        }
+    void merge(Sum* other) {
+        sum += other->sum;
     }
-    virtual void push(Lazytag* tag, Handle* handle) override {
-        auto add_tag = dynamic_cast<Add*>(tag);
-        if (add_tag) {
-            auto ett_handle = dynamic_cast<ETTHandle*>(handle);
-            sum += add_tag->add * ett_handle->vertex_size();
-        }
+    void push(Add* other, ETTHandle* handle) {
+        sum += other->add * handle->vertex_size();
     }
 };
 
@@ -122,6 +109,7 @@ TEST(ETTTest, BasicTree) {
 TEST(ETTTest, BasicSubtree) {
     {
     ETT<Sum, Add> ett;
+    auto flag = ETT<Sum, Add>::Test;
     for (int i = 1; i <= 10; i++) ett.new_node(i, Sum(i));
     for (int i = 2; i <= 5; i++) ett.link(1, i);
     for (int i = 6; i <= 10; i++) ett.link(2, i);
@@ -152,19 +140,19 @@ TEST(ETTTest, BasicSubtree) {
 TEST(ETTTest, MemoryLeakTest) {
     {
     ETT<bool> ett;
-    int n = 1000;
-    int m = 3000;
+    int n = 100000;
+    int m = 300000;
     vector<int> fa; fa.resize(n + 5);
     for (int i = 1; i <= n; i++) ett.new_node(i);
     std::cout<<"Finish\n";
     for (int i = 2; i <= n; i++) {
         fa[i] = rand_int(1, i-1);
         ett.link(fa[i], i);
-        if (i % 1000 == 0) std::cout<<"op i="<<i<<"\n";
+        if (i % 10000 == 0) std::cout<<"op i="<<i<<"\n";
     }
     cout<<"start operate\n";
     for (int i = 1; i <= m; i++) {
-        if (i % 1000 == 0) std::cout<<"op i="<<i<<"\n";
+        if (i % 10000 == 0) std::cout<<"op i="<<i<<"\n";
         int x = rand_int(1, n);
         int y = rand_int(1, n);
         if (ett.is_root(x)) {

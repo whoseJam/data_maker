@@ -7,8 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 # set(SRC_LIST example/history/541.cpp)
-# set(SRC_LIST example/test/test_array.cpp)
-set(SRC_LIST example/test/test_splay.cpp)
+set(SRC_LIST example/test/test_search.cpp)
 
 # if ()
 #     message(STATUS "making example/history/${TH}.cpp")
