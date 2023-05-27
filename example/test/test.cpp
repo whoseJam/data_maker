@@ -1,45 +1,69 @@
-#include <functional>
 #include <iostream>
-#include <string>
-#include <any>
-#include <map>
+#include <cstring>
+
+#include "Search.h"
+
+using namespace mk;
 using namespace std;
 
-class Runtime {
-public:
+int n;
 
-    template<typename T, typename ...Args>
-    T call(string key, Args... args) {
-        auto fk = funcs[key];
-        auto func = any_cast<std::function<T(Args...)>>(fk);
-        return func(args...);
+struct PermutationStatus {
+    int len;
+    int ans[10];
+    PermutationStatus() { len = 0; }
+    PermutationStatus(const PermutationStatus& other) {
+        len = other.len;
+        memcpy(ans, other.ans, sizeof(ans));
     }
-
-    map<string, any> funcs;
+    auto successors() -> vector<PermutationStatus*> {
+        vector<PermutationStatus*> ret;
+        bool vis[10] = {0};
+        for (int i = 1; i <= len; i++)
+            vis[ans[i]] = true;
+        for (int i = 1; i <= n; i++) {
+            if (!vis[i]) {
+                PermutationStatus* nxt = new PermutationStatus(*this);
+                nxt->ans[len + 1] = i;
+                nxt->len = len + 1;
+                ret.push_back(nxt);
+            }
+        }
+        return ret;
+    }
+    uint hash_code() {
+        uint ret = len;
+        for (int i = 1; i <= len; i++) ret = ret * 10 + ans[i];
+        return ret;
+    }
+    bool equal(const PermutationStatus& other) {
+        if (len != other.len) return false;
+        for (int i = 1; i <= len; i++)
+            if (ans[i] != other.ans[i]) return false;
+        return true;
+    }
 };
 
-int sum=10086;
-int getsum() {
-    return sum;
-}
-void add(int x) {
-    sum+=x;
+struct PermutationProblem : public SearchProblem {
+    static PermutationStatus* start_status() { return new PermutationStatus(); }
+    static void operate_on(PermutationStatus* stat) {
+        for (int i = 1; i <= stat->len; i++)
+            cout << stat->ans[i] << ' ';
+        cout << "\n";
+    }
+    static bool is_end(PermutationStatus* stat) { return stat->len == n; }
+    static bool finish() { return false; }
+};
+
+void test() {
+    n = 3;
+    SearchAgent<PermutationStatus, PermutationProblem> agent1(SearchType::DFS);
+    agent1.solve();
+    SearchAgent<PermutationStatus, PermutationProblem> agent2(SearchType::BFS);
+    agent2.solve();
 }
 
-int main() {
-    Runtime a;
-    auto get_func = std::function<int()>(getsum);
-    a.funcs["int"] = 1;
-    a.funcs["getsum"] = get_func;
-    // a.funcs["get"] = std::function<void(int)>(add);
-    auto b = a.funcs["int"];
-    cout << any_cast<int>(b) << "\n";
-    auto c = a.funcs["getsum"];
-    cout<<"yesyes\n";
-    auto d = any_cast<decltype(get_func)>(c);
-    cout << d() << "\n";
-    cout<<"yes\n";
-    a.call<int>("getsum");
-    // cout << a.call<int>("get");
+int main(int argc, char **argv) {
+    test();
     return 0;
 }
