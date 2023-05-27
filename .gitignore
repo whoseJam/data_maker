@@ -1,6 +1,6 @@
 maker/**
 dist/**
 build
-.vscode/*
-.VsCodeCounter/*
-./data
+.vscode
+.VSCodeCounter
+.cache
